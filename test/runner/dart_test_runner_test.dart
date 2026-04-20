@@ -4,8 +4,8 @@ import 'package:taskflare/src/runner/dart_test_runner.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('DartTestRunner', () {
-    test('returns exit code 0 for a passing project', () async {
+  group('Method run() returns the correct exit code', () {
+    test('Method run() returns exit code 0 for a passing project', () async {
       final runner = DartTestRunner(
         workingDirectory: _fixtureDir('passing_project'),
       );
@@ -13,15 +13,19 @@ void main() {
       expect(result.exitCode, equals(0));
     }, timeout: const Timeout(Duration(seconds: 60)));
 
-    test('returns non-zero exit code for a failing project', () async {
+    test('Method run() returns non-zero exit code for a failing project',
+        () async {
       final runner = DartTestRunner(
         workingDirectory: _fixtureDir('failing_project'),
       );
       final result = await runner.run();
       expect(result.exitCode, isNot(equals(0)));
     }, timeout: const Timeout(Duration(seconds: 60)));
+  });
 
-    test('output lines contain at least one JSON done event for passing project',
+  group('Method run() returns the correct output', () {
+    test(
+        'Method run() output contains a JSON done event for a passing project',
         () async {
       final runner = DartTestRunner(
         workingDirectory: _fixtureDir('passing_project'),
@@ -31,7 +35,8 @@ void main() {
       expect(hasDone, isTrue);
     }, timeout: const Timeout(Duration(seconds: 60)));
 
-    test('output lines contain at least one JSON done event for failing project',
+    test(
+        'Method run() output contains a JSON done event for a failing project',
         () async {
       final runner = DartTestRunner(
         workingDirectory: _fixtureDir('failing_project'),

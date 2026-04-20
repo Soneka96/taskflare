@@ -7,8 +7,9 @@ import 'package:taskflare/src/utils/enums.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Taskflare', () {
-    test('calls notifier with success summary when all tests pass', () async {
+  group('Method run() calls the notifier with the correct outcome', () {
+    test('Method run() calls notifier with success when all tests pass',
+        () async {
       final notifier = _FakeNotifier();
       final taskflare = Taskflare(
         runner: _FakeRunner(
@@ -30,7 +31,7 @@ void main() {
       expect(notifier.received?.outcome, equals(TestOutcome.success));
     });
 
-    test('calls notifier with failure summary when tests fail', () async {
+    test('Method run() calls notifier with failure when tests fail', () async {
       final notifier = _FakeNotifier();
       final taskflare = Taskflare(
         runner: _FakeRunner(
@@ -52,7 +53,8 @@ void main() {
       expect(notifier.received?.outcome, equals(TestOutcome.failure));
     });
 
-    test('calls notifier with crash summary when output is empty', () async {
+    test('Method run() calls notifier with crash when output is empty',
+        () async {
       final notifier = _FakeNotifier();
       final taskflare = Taskflare(
         runner: _FakeRunner(lines: [], exitCode: 1),
@@ -64,8 +66,11 @@ void main() {
 
       expect(notifier.received?.outcome, equals(TestOutcome.crash));
     });
+  });
 
-    test('passes correct counts to notifier', () async {
+  group('Method run() calls the notifier with the correct counts', () {
+    test('Method run() passes correct passed and skipped counts to notifier',
+        () async {
       final notifier = _FakeNotifier();
       final taskflare = Taskflare(
         runner: _FakeRunner(
@@ -90,8 +95,10 @@ void main() {
       expect(notifier.received?.passed, equals(5));
       expect(notifier.received?.skipped, equals(2));
     });
+  });
 
-    test('notifier is called exactly once per run', () async {
+  group('Method run() calls the notifier the correct number of times', () {
+    test('Method run() calls notifier exactly once per execution', () async {
       final notifier = _FakeNotifier();
       final taskflare = Taskflare(
         runner: _FakeRunner(

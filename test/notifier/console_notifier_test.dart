@@ -4,31 +4,33 @@ import 'package:taskflare/src/utils/enums.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('ConsoleNotifier', () {
-    late List<String> output;
-    late ConsoleNotifier notifier;
+  late List<String> output;
+  late ConsoleNotifier notifier;
 
-    setUp(() {
-      output = [];
-      notifier = ConsoleNotifier(printer: output.add);
-    });
+  setUp(() {
+    output = [];
+    notifier = ConsoleNotifier(printer: output.add);
+  });
 
-    test('prints SUCCESS label when outcome is success', () {
+  group('Method notify() outputs the correct label', () {
+    test('Method notify() prints SUCCESS label when outcome is success', () {
       notifier.notify(_summary(TestOutcome.success));
       expect(output.single, contains('[SUCCESS]'));
     });
 
-    test('prints FAILURE label when outcome is failure', () {
+    test('Method notify() prints FAILURE label when outcome is failure', () {
       notifier.notify(_summary(TestOutcome.failure));
       expect(output.single, contains('[FAILURE]'));
     });
 
-    test('prints CRASH label when outcome is crash', () {
+    test('Method notify() prints CRASH label when outcome is crash', () {
       notifier.notify(_summary(TestOutcome.crash));
       expect(output.single, contains('[CRASH]'));
     });
+  });
 
-    test('prints passed count', () {
+  group('Method notify() outputs the correct counts', () {
+    test('Method notify() prints passed count', () {
       notifier.notify(
         const RunSummary(
           outcome: TestOutcome.success,
@@ -40,7 +42,7 @@ void main() {
       expect(output.single, contains('passed: 42'));
     });
 
-    test('prints failed count', () {
+    test('Method notify() prints failed count', () {
       notifier.notify(
         const RunSummary(
           outcome: TestOutcome.failure,
@@ -52,7 +54,7 @@ void main() {
       expect(output.single, contains('failed: 3'));
     });
 
-    test('prints skipped count', () {
+    test('Method notify() prints skipped count', () {
       notifier.notify(
         const RunSummary(
           outcome: TestOutcome.success,
@@ -63,8 +65,10 @@ void main() {
       );
       expect(output.single, contains('skipped: 2'));
     });
+  });
 
-    test('emits exactly one line per notify call', () {
+  group('Method notify() behaves correctly', () {
+    test('Method notify() emits exactly one line per call', () {
       notifier.notify(_summary(TestOutcome.success));
       expect(output, hasLength(1));
     });
