@@ -104,5 +104,5 @@ The integration tests in `test/runner/` spin up real subprocesses using the fixt
 
 | Document                                                               | Contents                                                      |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [`docs/conventions_testing.md`](docs/conventions_testing.md)           | Test structure, group/test naming rules, what must be covered |
-| [`docs/conventions_architecture.md`](docs/conventions_architecture.md) | Folder layout, layer dependency rules, naming patterns        |
+| [`doc/conventions_testing.md`](doc/conventions_testing.md)           | Test structure, group/test naming rules, what must be covered |
+| [`doc/conventions_architecture.md`](doc/conventions_architecture.md) | Folder layout, layer dependency rules, naming patterns        |

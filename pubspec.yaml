@@ -1,7 +1,15 @@
 name: taskflare
-description: A CLI tool that wraps dart test and notifies on completion.
+description: A Dart CLI tool that wraps dart test, parses JSON output, and notifies you of the result — success, failure, or crash.
 version: 0.1.0
-publish_to: none
+
+repository: https://github.com/Soneka96/taskflare
+issue_tracker: https://github.com/Soneka96/taskflare/issues
+
+topics:
+  - cli
+  - testing
+  - dart
+  - notifications
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -13,3 +21,6 @@ dependencies:
 dev_dependencies:
   lints: ^5.0.0
   test: ^1.25.0
+
+executables:
+  taskflare:
