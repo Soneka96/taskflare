@@ -8,6 +8,7 @@ void main() {
     passed: 5,
     failed: 0,
     skipped: 1,
+    failedTestNames: [],
   );
 
   group('RunSummary\'s copyWith() returns the correct value', () {
@@ -50,6 +51,24 @@ void main() {
       final result = base.copyWith(passed: 2);
       expect(result.skipped, equals(1));
     });
+
+    test('Method copyWith() returns a new instance with failedTestNames replaced',
+        () {
+      final result = base.copyWith(failedTestNames: ['test A', 'test B']);
+      expect(result.failedTestNames, equals(['test A', 'test B']));
+    });
+
+    test('Method copyWith() preserves failedTestNames when not provided', () {
+      const withNames = RunSummary(
+        outcome: TestOutcome.failure,
+        passed: 1,
+        failed: 1,
+        skipped: 0,
+        failedTestNames: ['test A'],
+      );
+      final result = withNames.copyWith(passed: 2);
+      expect(result.failedTestNames, equals(['test A']));
+    });
   });
 
   group('RunSummary\'s equality behaves correctly', () {
@@ -59,6 +78,7 @@ void main() {
         passed: 5,
         failed: 0,
         skipped: 1,
+        failedTestNames: [],
       );
       expect(base, equals(other));
     });
@@ -82,6 +102,17 @@ void main() {
       );
       expect(base, isNot(equals(other)));
     });
+
+    test('Two instances with different failedTestNames are not equal', () {
+      const other = RunSummary(
+        outcome: TestOutcome.success,
+        passed: 5,
+        failed: 0,
+        skipped: 1,
+        failedTestNames: ['test A'],
+      );
+      expect(base, isNot(equals(other)));
+    });
   });
 
   group('RunSummary\'s hashCode behaves correctly', () {
@@ -91,6 +122,7 @@ void main() {
         passed: 5,
         failed: 0,
         skipped: 1,
+        failedTestNames: [],
       );
       expect(base.hashCode, equals(other.hashCode));
     });
@@ -98,11 +130,17 @@ void main() {
 
   group('RunSummary\'s toString() returns the correct value', () {
     test('Method toString() contains all field values', () {
-      final str = base.toString();
-      expect(str, contains('success'));
-      expect(str, contains('5'));
-      expect(str, contains('0'));
+      const withNames = RunSummary(
+        outcome: TestOutcome.failure,
+        passed: 1,
+        failed: 1,
+        skipped: 0,
+        failedTestNames: ['test A'],
+      );
+      final str = withNames.toString();
+      expect(str, contains('failure'));
       expect(str, contains('1'));
+      expect(str, contains('test A'));
     });
   });
 }
