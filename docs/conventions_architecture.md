@@ -2,7 +2,7 @@
 
 ## Folder Layout
 
-```
+```text
 lib/src/
 ├── entities/     # Pure data classes — no I/O, no business logic
 ├── utils/        # Shared utilities: enums, constants, helpers
@@ -14,14 +14,14 @@ lib/src/
 
 ## Layer Rules
 
-| Layer | Allowed dependencies | Forbidden |
-|-------|----------------------|-----------|
-| `entities` | `utils` | everything else |
-| `utils` | nothing | everything |
-| `parser` | `entities`, `utils` | `runner`, `notifier` |
-| `runner` | `utils` | `parser`, `notifier`, `entities` |
-| `notifier` | `entities`, `utils` | `runner`, `parser` |
-| orchestrator | all layers | — |
+| Layer        | Allowed dependencies | Forbidden                        |
+| ------------ | -------------------- | -------------------------------- |
+| `entities`   | `utils`              | everything else                  |
+| `utils`      | nothing              | everything                       |
+| `parser`     | `entities`, `utils`  | `runner`, `notifier`             |
+| `runner`     | `utils`              | `parser`, `notifier`, `entities` |
+| `notifier`   | `entities`, `utils`  | `runner`, `parser`               |
+| orchestrator | all layers           | —                                |
 
 ## Naming
 

@@ -1,4 +1,5 @@
-import '../entities/run_summary.dart';
+import 'package:taskflare/taskflare.dart';
+
 import 'notifier.dart';
 
 class CompositeNotifier implements Notifier {

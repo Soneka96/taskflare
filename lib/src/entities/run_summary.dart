@@ -1,4 +1,4 @@
-import '../utils/enums.dart';
+import 'package:taskflare/taskflare.dart';
 
 class RunSummary {
   const RunSummary({

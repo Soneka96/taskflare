@@ -1,5 +1,5 @@
-import '../entities/run_summary.dart';
-import '../utils/enums.dart';
+import 'package:taskflare/taskflare.dart';
+
 import 'notifier.dart';
 
 class ConsoleNotifier implements Notifier {

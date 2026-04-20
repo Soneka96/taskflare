@@ -4,7 +4,7 @@
 
 Tests are organized to mirror `lib/src/`:
 
-```
+```text
 test/
 ├── entities/
 ├── parser/
@@ -37,33 +37,33 @@ void main() {                               // level 1 — always main()
 
 A group describes the **aspect or category** being tested — not a class name alone.
 
-| Layer | Group pattern | Example |
-|-------|--------------|---------|
-| Entities | `'ClassName\'s methodName() returns the correct value'` | `'RunSummary\'s copyWith() returns the correct value'` |
-| Entities | `'ClassName\'s equality behaves correctly'` | `'RunSummary\'s equality behaves correctly'` |
-| Entities | `'ClassName\'s hashCode behaves correctly'` | `'RunSummary\'s hashCode behaves correctly'` |
-| Parser | `'Method methodName() returns the correct outcome'` | `'Method parse() returns the correct outcome'` |
-| Parser | `'Method methodName() returns the correct counts'` | `'Method parse() returns the correct counts'` |
-| Notifier | `'Method methodName() outputs the correct label'` | `'Method notify() outputs the correct label'` |
-| Notifier | `'Method methodName() outputs the correct counts'` | `'Method notify() outputs the correct counts'` |
-| Runner | `'ClassName stores the correct values'` | `'CommandResult stores the correct values'` |
-| Runner | `'Method methodName() returns the correct exit code'` | `'Method run() returns the correct exit code'` |
-| Orchestrator | `'Method methodName() calls X with the correct Y'` | `'Method run() calls the notifier with the correct outcome'` |
+| Layer        | Group pattern                                           | Example                                                      |
+| ------------ | ------------------------------------------------------- | ------------------------------------------------------------ |
+| Entities     | `'ClassName\'s methodName() returns the correct value'` | `'RunSummary\'s copyWith() returns the correct value'`       |
+| Entities     | `'ClassName\'s equality behaves correctly'`             | `'RunSummary\'s equality behaves correctly'`                 |
+| Entities     | `'ClassName\'s hashCode behaves correctly'`             | `'RunSummary\'s hashCode behaves correctly'`                 |
+| Parser       | `'Method methodName() returns the correct outcome'`     | `'Method parse() returns the correct outcome'`               |
+| Parser       | `'Method methodName() returns the correct counts'`      | `'Method parse() returns the correct counts'`                |
+| Notifier     | `'Method methodName() outputs the correct label'`       | `'Method notify() outputs the correct label'`                |
+| Notifier     | `'Method methodName() outputs the correct counts'`      | `'Method notify() outputs the correct counts'`               |
+| Runner       | `'ClassName stores the correct values'`                 | `'CommandResult stores the correct values'`                  |
+| Runner       | `'Method methodName() returns the correct exit code'`   | `'Method run() returns the correct exit code'`               |
+| Orchestrator | `'Method methodName() calls X with the correct Y'`      | `'Method run() calls the notifier with the correct outcome'` |
 
 ## Test Naming
 
 Tests describe the **specific scenario and expected result**, always including the method name:
 
-```
+```text
 'Method methodName() returns X when Y'
 'Method methodName() does X when Y'
 ```
 
-| Bad | Good |
-|-----|------|
-| `'copyWith works'` | `'Method copyWith() returns a new instance with outcome replaced'` |
-| `'parse test'` | `'Method parse() returns failure when done reports failure and failed count is positive'` |
-| `'notifier test'` | `'Method notify() prints SUCCESS label when outcome is success'` |
+| Bad                | Good                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| `'copyWith works'` | `'Method copyWith() returns a new instance with outcome replaced'`                        |
+| `'parse test'`     | `'Method parse() returns failure when done reports failure and failed count is positive'` |
+| `'notifier test'`  | `'Method notify() prints SUCCESS label when outcome is success'`                          |
 
 ## What Must Be Tested
 

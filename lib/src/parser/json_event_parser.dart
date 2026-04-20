@@ -1,7 +1,6 @@
 import 'dart:convert';
 
-import '../entities/run_summary.dart';
-import '../utils/enums.dart';
+import 'package:taskflare/taskflare.dart';
 
 class JsonEventParser {
   RunSummary parse(List<String> lines, int exitCode) {

@@ -6,11 +6,11 @@ A Dart CLI tool that wraps `dart test` and observes the process externally — p
 
 Every run ends with exactly one of three outcomes:
 
-| Outcome | Meaning |
-|---------|---------|
-| `[SUCCESS]` | All tests passed |
-| `[FAILURE]` | At least one test failed |
-| `[CRASH]` | Tests did not run or the process crashed before completing |
+| Outcome     | Meaning                                                    |
+| ----------- | ---------------------------------------------------------- |
+| `[SUCCESS]` | All tests passed                                           |
+| `[FAILURE]` | At least one test failed                                   |
+| `[CRASH]`   | Tests did not run or the process crashed before completing |
 
 ## Usage
 
@@ -29,7 +29,7 @@ dart run taskflare test/parser/
 
 Example output:
 
-```
+```text
 [SUCCESS]  passed: 42  failed: 0  skipped: 2
 [FAILURE]  passed: 10  failed: 3  skipped: 0
 [CRASH]    passed: 0   failed: 0  skipped: 0
@@ -43,7 +43,7 @@ Example output:
 
 taskflare follows a clean, layered architecture. Each layer has a single responsibility and depends only on the layers below it.
 
-```
+```text
 bin/
 └── taskflare.dart          Entry point — wires dependencies and calls the orchestrator
 
@@ -65,7 +65,7 @@ lib/src/
 
 ### Layer rules
 
-```
+```text
 utils      ←  no dependencies
 entities   ←  utils
 parser     ←  entities, utils
@@ -102,7 +102,7 @@ The integration tests in `test/runner/` spin up real subprocesses using the fixt
 
 ## Project conventions
 
-| Document | Contents |
-|----------|----------|
-| [`docs/conventions_testing.md`](docs/conventions_testing.md) | Test structure, group/test naming rules, what must be covered |
-| [`docs/conventions_architecture.md`](docs/conventions_architecture.md) | Folder layout, layer dependency rules, naming patterns |
+| Document                                                               | Contents                                                      |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [`docs/conventions_testing.md`](docs/conventions_testing.md)           | Test structure, group/test naming rules, what must be covered |
+| [`docs/conventions_architecture.md`](docs/conventions_architecture.md) | Folder layout, layer dependency rules, naming patterns        |

@@ -7,7 +7,8 @@ import 'package:test/test.dart';
 
 void main() {
   group('Method notify() invokes PowerShell with the correct title', () {
-    test('Method notify() uses SUCCESS title when outcome is success', () async {
+    test('Method notify() uses SUCCESS title when outcome is success',
+        () async {
       final calls = <_Call>[];
       final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
 
@@ -16,7 +17,8 @@ void main() {
       expect(calls.single.script, contains('SUCCESS'));
     });
 
-    test('Method notify() uses FAILURE title when outcome is failure', () async {
+    test('Method notify() uses FAILURE title when outcome is failure',
+        () async {
       final calls = <_Call>[];
       final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
 
@@ -124,7 +126,7 @@ void main() {
 
       await notifier.notify(_summary(TestOutcome.success));
 
-      expect(calls.single.script, contains('taskflare'));
+      expect(calls.single.script, contains('Taskflare.App'));
     });
   });
 }
