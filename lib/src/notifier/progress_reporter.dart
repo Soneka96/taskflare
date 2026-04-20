@@ -28,7 +28,7 @@ class ConsoleProgressReporter implements ProgressReporter {
     _passed = passed;
     _failed = failed;
     _skipped = skipped;
-    _render();
+    // state is stored but not rendered — next onTestStart will pick it up
   }
 
   @override

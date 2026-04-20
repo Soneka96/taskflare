@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.9
+
+- Fix: progress line no longer spams when many tests complete in parallel — the line only re-renders when a new test starts, counts are stored internally and shown on the next render
+
 ## 0.1.8
 
 - Progress line now shows time + counts + current test name on one overwriting line: `(9.1s)  passed: 108  failed: 1  skipped: 0  ▶ test name`

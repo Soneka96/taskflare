@@ -31,42 +31,26 @@ void main() {
     });
   });
 
-  group('Method update() re-renders the progress line with new counts', () {
-    test('Method update() includes the passed count', () {
+  group('Method update() stores counts for the next onTestStart render', () {
+    test('Method update() does not write to the sink immediately', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.update(7, 0, 0);
+      reporter.update(7, 3, 1);
+
+      expect(sink.toString(), isEmpty);
+    });
+
+    test('Method update() counts appear on next onTestStart render', () {
+      final sink = StringBuffer();
+      final reporter = ConsoleProgressReporter(sink: sink);
+
+      reporter.update(7, 3, 1);
+      reporter.onTestStart('next test', const Duration(seconds: 2));
 
       expect(sink.toString(), contains('passed: 7'));
-    });
-
-    test('Method update() includes the failed count', () {
-      final sink = StringBuffer();
-      final reporter = ConsoleProgressReporter(sink: sink);
-
-      reporter.update(0, 3, 0);
-
       expect(sink.toString(), contains('failed: 3'));
-    });
-
-    test('Method update() includes the skipped count', () {
-      final sink = StringBuffer();
-      final reporter = ConsoleProgressReporter(sink: sink);
-
-      reporter.update(0, 0, 2);
-
-      expect(sink.toString(), contains('skipped: 2'));
-    });
-
-    test('Method update() retains the current test name', () {
-      final sink = StringBuffer();
-      final reporter = ConsoleProgressReporter(sink: sink);
-
-      reporter.onTestStart('running test', const Duration(seconds: 1));
-      reporter.update(1, 0, 0);
-
-      expect(sink.toString(), contains('running test'));
+      expect(sink.toString(), contains('skipped: 1'));
     });
   });
 
