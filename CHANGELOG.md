@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Fix: per-failure Windows toast now shows "Test failed" title with the test name in the body instead of "End of tests"
+
 ## 0.1.3
 
 - Add live progress counter: terminal updates in-place with `\r` showing running passed/failed/skipped counts
