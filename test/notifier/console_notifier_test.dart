@@ -103,6 +103,42 @@ void main() {
     });
   });
 
+  group('Method notify() outputs the crash error output', () {
+    test('Method notify() prints error output lines when crashOutput is set',
+        () {
+      notifier.notify(
+        const RunSummary(
+          outcome: TestOutcome.crash,
+          passed: 0,
+          failed: 0,
+          skipped: 0,
+          crashOutput: 'Error: compilation failed\nlib/main.dart:1:1',
+        ),
+      );
+      expect(output.any((l) => l.contains('Error: compilation failed')), isTrue);
+      expect(output.any((l) => l.contains('lib/main.dart:1:1')), isTrue);
+    });
+
+    test('Method notify() prints ERROR OUTPUT header before crash lines', () {
+      notifier.notify(
+        const RunSummary(
+          outcome: TestOutcome.crash,
+          passed: 0,
+          failed: 0,
+          skipped: 0,
+          crashOutput: 'some error',
+        ),
+      );
+      expect(output.any((l) => l.contains('ERROR OUTPUT')), isTrue);
+    });
+
+    test('Method notify() prints no error output when crashOutput is null', () {
+      notifier.notify(_summary(TestOutcome.crash));
+      expect(output.any((l) => l.contains('ERROR OUTPUT')), isFalse);
+    });
+
+  });
+
   group('Method notify() behaves correctly', () {
     test('Method notify() emits exactly one line when no tests fail', () {
       notifier.notify(_summary(TestOutcome.success));

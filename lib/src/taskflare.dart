@@ -1,6 +1,8 @@
+import 'entities/run_summary.dart';
 import 'notifier/notifier.dart';
 import 'parser/json_event_parser.dart';
 import 'runner/command_runner.dart';
+import 'utils/enums.dart';
 
 class Taskflare {
   const Taskflare({
@@ -15,7 +17,15 @@ class Taskflare {
 
   Future<void> run() async {
     final result = await runner.run();
-    final summary = parser.parse(result.lines, result.exitCode);
+    var summary = parser.parse(result.lines, result.exitCode);
+
+    if (summary.outcome == TestOutcome.crash &&
+        result.stderrLines.isNotEmpty) {
+      summary = summary.copyWith(
+        crashOutput: result.stderrLines.join('\n'),
+      );
+    }
+
     await notifier.notify(summary);
   }
 }

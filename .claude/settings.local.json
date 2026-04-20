@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout *)",
+      "Bash(dart pub *)",
+      "Bash(dart test *)",
+      "Bash(dart bin/taskflare.dart)",
+      "Bash(dart --version)",
+      "Bash(mv docs *)",
+      "Bash(rmdir assets *)"
+    ]
+  }
+}

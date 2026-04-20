@@ -97,6 +97,47 @@ void main() {
     });
   });
 
+  group('Method run() attaches crash output from stderr', () {
+    test('Method run() populates crashOutput when outcome is crash and stderr is non-empty',
+        () async {
+      final notifier = _FakeNotifier();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [],
+          stderrLines: ['Error: compilation failed', 'lib/main.dart:1:1'],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+      );
+
+      await taskflare.run();
+
+      expect(notifier.received?.crashOutput, contains('Error: compilation failed'));
+    });
+
+    test('Method run() does not set crashOutput when outcome is success',
+        () async {
+      final notifier = _FakeNotifier();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"testID":0,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":true}',
+          ],
+          stderrLines: ['some warning'],
+          exitCode: 0,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+      );
+
+      await taskflare.run();
+
+      expect(notifier.received?.crashOutput, isNull);
+    });
+  });
+
   group('Method run() calls the notifier the correct number of times', () {
     test('Method run() calls notifier exactly once per execution', () async {
       final notifier = _FakeNotifier();
@@ -120,14 +161,22 @@ void main() {
 }
 
 class _FakeRunner extends CommandRunner {
-  _FakeRunner({required this.lines, required this.exitCode});
+  _FakeRunner({
+    required this.lines,
+    required this.exitCode,
+    this.stderrLines = const [],
+  });
 
   final List<String> lines;
+  final List<String> stderrLines;
   final int exitCode;
 
   @override
-  Future<CommandResult> run() async =>
-      CommandResult(lines: lines, exitCode: exitCode);
+  Future<CommandResult> run() async => CommandResult(
+        lines: lines,
+        stderrLines: stderrLines,
+        exitCode: exitCode,
+      );
 }
 
 class _FakeNotifier implements Notifier {

@@ -25,5 +25,13 @@ class ConsoleNotifier implements Notifier {
         _printer('  FAILED: $name');
       }
     }
+
+    if (summary.crashOutput != null && summary.crashOutput!.isNotEmpty) {
+      _printer('');
+      _printer('  ERROR OUTPUT:');
+      for (final line in summary.crashOutput!.split('\n')) {
+        _printer('  $line');
+      }
+    }
   }
 }

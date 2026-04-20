@@ -79,7 +79,7 @@ void main() {
           outcome: TestOutcome.success,
           passed: 5,
           failed: 0,
-          skipped: 2,
+        skipped: 2,
         ),
       );
 

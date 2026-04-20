@@ -69,6 +69,24 @@ void main() {
       final result = withNames.copyWith(passed: 2);
       expect(result.failedTestNames, equals(['test A']));
     });
+
+    test('Method copyWith() returns a new instance with crashOutput replaced',
+        () {
+      final result = base.copyWith(crashOutput: 'compilation failed');
+      expect(result.crashOutput, equals('compilation failed'));
+    });
+
+    test('Method copyWith() preserves crashOutput when not provided', () {
+      const withCrash = RunSummary(
+        outcome: TestOutcome.crash,
+        passed: 0,
+        failed: 0,
+        skipped: 0,
+        crashOutput: 'error text',
+      );
+      final result = withCrash.copyWith(passed: 1);
+      expect(result.crashOutput, equals('error text'));
+    });
   });
 
   group('RunSummary\'s equality behaves correctly', () {
@@ -112,6 +130,23 @@ void main() {
         failedTestNames: ['test A'],
       );
       expect(base, isNot(equals(other)));
+    });
+
+    test('Two instances with different crashOutput are not equal', () {
+      const other = RunSummary(
+        outcome: TestOutcome.crash,
+        passed: 0,
+        failed: 0,
+        skipped: 0,
+        crashOutput: 'error',
+      );
+      const withoutCrash = RunSummary(
+        outcome: TestOutcome.crash,
+        passed: 0,
+        failed: 0,
+        skipped: 0,
+      );
+      expect(other, isNot(equals(withoutCrash)));
     });
   });
 

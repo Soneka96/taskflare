@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'command_runner.dart';
 
-class DartTestRunner extends CommandRunner {
-  const DartTestRunner({
+class FlutterTestRunner extends CommandRunner {
+  const FlutterTestRunner({
     this.arguments = const [],
     this.workingDirectory,
   });
@@ -15,8 +15,8 @@ class DartTestRunner extends CommandRunner {
   @override
   Future<CommandResult> run() async {
     final process = await Process.start(
-      'dart',
-      ['test', '--reporter=json', ...arguments],
+      'flutter',
+      ['test', '--machine', ...arguments],
       workingDirectory: workingDirectory,
     );
 
