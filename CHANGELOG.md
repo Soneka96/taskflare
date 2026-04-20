@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7
+
+- Progress line now shows elapsed time before the test name: `(1.2 s)  ▶ test name`
+- Add dartdoc comments to all public API symbols (`RunSummary`, `TestOutcome` and their members)
+- Add `example/taskflare_example.dart` for pub.dev scoring
+
 ## 0.1.6
 
 - Fix: progress line now overwrites in-place with `\r` — only the currently running test name is shown, previous entries no longer accumulate

@@ -65,7 +65,8 @@ class Taskflare {
               final isUserTest = groupIds.length > 1;
               if (isUserTest) {
                 final leaf = _leafTestName(name, groupIds, groupById);
-                progressReporter?.onTestStart(leaf);
+                final elapsed = DateTime.now().difference(startTime);
+                progressReporter?.onTestStart(leaf, elapsed);
               }
             }
           }

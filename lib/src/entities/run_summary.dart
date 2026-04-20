@@ -1,6 +1,14 @@
 import 'package:taskflare/taskflare.dart';
 
+/// Immutable summary of a completed test run.
+///
+/// Produced by [JsonEventParser] and consumed by [Notifier] implementations.
+/// All counts exclude hidden (auto-generated) tests.
 class RunSummary {
+  /// Creates a [RunSummary].
+  ///
+  /// [outcome], [passed], [failed], and [skipped] are required.
+  /// [failedTestNames] defaults to an empty list when omitted.
   const RunSummary({
     required this.outcome,
     required this.passed,
@@ -11,16 +19,34 @@ class RunSummary {
     this.duration,
   });
 
+  /// The overall verdict of the run.
   final TestOutcome outcome;
+
+  /// Number of tests that passed (not skipped, not failed).
   final int passed;
+
+  /// Number of tests that failed.
   final int failed;
+
+  /// Number of tests that were skipped.
   final int skipped;
+
+  /// Names of all failed tests, in the order they completed.
+  ///
+  /// Empty when [outcome] is [TestOutcome.success] or [TestOutcome.crash].
   final List<String> failedTestNames;
+
+  /// Stderr captured from the process when the outcome is [TestOutcome.crash].
+  ///
+  /// `null` for [TestOutcome.success] and [TestOutcome.failure].
   final String? crashOutput;
 
   /// Elapsed wall-clock time from process start to stream completion.
+  ///
+  /// `null` when the summary is constructed without timing information.
   final Duration? duration;
 
+  /// Returns a copy of this summary with the given fields replaced.
   RunSummary copyWith({
     TestOutcome? outcome,
     int? passed,

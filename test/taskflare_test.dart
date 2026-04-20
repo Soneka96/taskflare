@@ -384,7 +384,7 @@ class _FakeProgressReporter implements ProgressReporter {
   final List<String> startedNames = [];
 
   @override
-  void onTestStart(String name) => startedNames.add(name);
+  void onTestStart(String name, Duration elapsed) => startedNames.add(name);
 
   @override
   void update(int passed, int failed, int skipped) => updateCount++;
