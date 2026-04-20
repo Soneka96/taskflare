@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+- Fix: separate stdout and stderr streams so JSON parsing is not polluted by stderr output
+- Fix: auto-detect Flutter projects and use `flutter test --machine` instead of `dart test --reporter=json`
+- Fix: on `[CRASH]`, display the captured stderr so the cause is visible in the console
+- Add `crashOutput` field to `RunSummary` carrying the raw stderr on crash
+- Add `FlutterTestRunner` and `ProjectDetector`
+
 ## 0.1.0
 
 - Initial release
