@@ -2,7 +2,8 @@ import 'package:taskflare/src/notifier/progress_reporter.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Method onTestStart() writes the test name to the sink', () {
+  group('Method onTestStart() overwrites the current line with the test name',
+      () {
     test('Method onTestStart() writes the test name to the sink', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
@@ -12,42 +13,36 @@ void main() {
       expect(sink.toString(), contains('my test name'));
     });
 
-    test('Method onTestStart() prefixes the name with a triangle marker', () {
+    test('Method onTestStart() prefixes output with a carriage return', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
       reporter.onTestStart('some test');
 
-      expect(sink.toString(), contains('▶'));
+      expect(sink.toString(), startsWith('\r'));
+    });
+
+    test('Method onTestStart() pads output to clear previous longer line', () {
+      final sink = StringBuffer();
+      final reporter = ConsoleProgressReporter(sink: sink);
+
+      reporter.onTestStart('a very long test name that takes lots of space');
+      reporter.onTestStart('short');
+
+      final output = sink.toString();
+      final secondWrite = output.substring(output.indexOf('\r', 1));
+      expect(secondWrite.length, greaterThan('  ▶ short'.length));
     });
   });
 
-  group('Method update() writes a progress line with the correct counts', () {
-    test('Method update() writes passed count to the sink', () {
+  group('Method done() terminates the progress line', () {
+    test('Method done() writes a newline to the sink', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.update(3, 0, 0);
+      reporter.done();
 
-      expect(sink.toString(), contains('passed: 3'));
-    });
-
-    test('Method update() writes failed count to the sink', () {
-      final sink = StringBuffer();
-      final reporter = ConsoleProgressReporter(sink: sink);
-
-      reporter.update(0, 2, 0);
-
-      expect(sink.toString(), contains('failed: 2'));
-    });
-
-    test('Method update() writes skipped count to the sink', () {
-      final sink = StringBuffer();
-      final reporter = ConsoleProgressReporter(sink: sink);
-
-      reporter.update(0, 0, 1);
-
-      expect(sink.toString(), contains('skipped: 1'));
+      expect(sink.toString(), contains('\n'));
     });
   });
 }

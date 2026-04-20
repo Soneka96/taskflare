@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+
+- Fix: progress line now overwrites in-place with `\r` — only the currently running test name is shown, previous entries no longer accumulate
+
 ## 0.1.5
 
 - Add elapsed time to console output: `[SUCCESS]  passed: 3  failed: 0  skipped: 0  (2.4s)`

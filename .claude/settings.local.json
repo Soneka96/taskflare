@@ -12,7 +12,8 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(git commit -m 'feat: runtime display, current test name in progress, leaf name in toast \\(0.1.5\\) *)"
+      "Bash(git commit -m 'feat: runtime display, current test name in progress, leaf name in toast \\(0.1.5\\) *)",
+      "Bash(git commit *)"
     ]
   }
 }

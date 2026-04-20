@@ -10,17 +10,21 @@ class ConsoleProgressReporter implements ProgressReporter {
   ConsoleProgressReporter({StringSink? sink}) : _sink = sink ?? stdout;
 
   final StringSink _sink;
+  int _lastLength = 0;
 
   @override
-  void onTestStart(String name) => _sink.writeln('  ▶ $name');
-
-  @override
-  void update(int passed, int failed, int skipped) {
-    _sink.writeln(
-      '  passed: $passed  failed: $failed  skipped: $skipped',
-    );
+  void onTestStart(String name) {
+    final line = '  ▶ $name';
+    _sink.write('\r${line.padRight(_lastLength)}');
+    _lastLength = line.length;
   }
 
   @override
-  void done() {}
+  void update(int passed, int failed, int skipped) {}
+
+  @override
+  void done() {
+    _sink.writeln();
+    _lastLength = 0;
+  }
 }
