@@ -18,6 +18,7 @@ class FlutterTestRunner extends CommandRunner {
       'flutter',
       ['test', '--machine', ...arguments],
       workingDirectory: workingDirectory,
+      runInShell: true,
     );
 
     final lines = <String>[];

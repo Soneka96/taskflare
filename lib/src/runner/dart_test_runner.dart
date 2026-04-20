@@ -18,6 +18,7 @@ class DartTestRunner extends CommandRunner {
       'dart',
       ['test', '--reporter=json', ...arguments],
       workingDirectory: workingDirectory,
+      runInShell: true,
     );
 
     final lines = <String>[];

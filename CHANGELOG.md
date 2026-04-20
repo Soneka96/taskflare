@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Fix: add `runInShell: true` to `FlutterTestRunner` and `DartTestRunner` so batch/cmd wrappers are resolved on Windows
+
 ## 0.1.1
 
 - Fix: separate stdout and stderr streams so JSON parsing is not polluted by stderr output
