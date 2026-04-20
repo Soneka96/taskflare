@@ -13,10 +13,17 @@ class ConsoleNotifier implements Notifier {
     final label = switch (summary.outcome) {
       TestOutcome.success => '[SUCCESS]',
       TestOutcome.failure => '[FAILURE]',
-      TestOutcome.crash => '[CRASH]',
+      TestOutcome.crash => '[CRASH]  ',
     };
 
     _printer('$label  passed: ${summary.passed}  '
         'failed: ${summary.failed}  skipped: ${summary.skipped}');
+
+    if (summary.failedTestNames.isNotEmpty) {
+      _printer('');
+      for (final name in summary.failedTestNames) {
+        _printer('  FAILED: $name');
+      }
+    }
   }
 }

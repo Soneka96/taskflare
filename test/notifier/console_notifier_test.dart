@@ -15,17 +15,17 @@ void main() {
   group('Method notify() outputs the correct label', () {
     test('Method notify() prints SUCCESS label when outcome is success', () {
       notifier.notify(_summary(TestOutcome.success));
-      expect(output.single, contains('[SUCCESS]'));
+      expect(output.first, contains('[SUCCESS]'));
     });
 
     test('Method notify() prints FAILURE label when outcome is failure', () {
       notifier.notify(_summary(TestOutcome.failure));
-      expect(output.single, contains('[FAILURE]'));
+      expect(output.first, contains('[FAILURE]'));
     });
 
     test('Method notify() prints CRASH label when outcome is crash', () {
       notifier.notify(_summary(TestOutcome.crash));
-      expect(output.single, contains('[CRASH]'));
+      expect(output.first, contains('[CRASH]'));
     });
   });
 
@@ -39,7 +39,7 @@ void main() {
           skipped: 0,
         ),
       );
-      expect(output.single, contains('passed: 42'));
+      expect(output.first, contains('passed: 42'));
     });
 
     test('Method notify() prints failed count', () {
@@ -51,7 +51,7 @@ void main() {
           skipped: 0,
         ),
       );
-      expect(output.single, contains('failed: 3'));
+      expect(output.first, contains('failed: 3'));
     });
 
     test('Method notify() prints skipped count', () {
@@ -63,14 +63,66 @@ void main() {
           skipped: 2,
         ),
       );
-      expect(output.single, contains('skipped: 2'));
+      expect(output.first, contains('skipped: 2'));
+    });
+  });
+
+  group('Method notify() outputs the correct failed test names', () {
+    test('Method notify() prints each failed test name on its own line', () {
+      notifier.notify(
+        const RunSummary(
+          outcome: TestOutcome.failure,
+          passed: 1,
+          failed: 2,
+          skipped: 0,
+          failedTestNames: ['test A', 'test B'],
+        ),
+      );
+      expect(output, contains('  FAILED: test A'));
+      expect(output, contains('  FAILED: test B'));
+    });
+
+    test('Method notify() prints no failed names when all tests pass', () {
+      notifier.notify(_summary(TestOutcome.success));
+      expect(output.any((l) => l.contains('FAILED:')), isFalse);
+    });
+
+    test(
+        'Method notify() prints an empty separator line before failed names',
+        () {
+      notifier.notify(
+        const RunSummary(
+          outcome: TestOutcome.failure,
+          passed: 0,
+          failed: 1,
+          skipped: 0,
+          failedTestNames: ['test A'],
+        ),
+      );
+      expect(output[1], equals(''));
     });
   });
 
   group('Method notify() behaves correctly', () {
-    test('Method notify() emits exactly one line per call', () {
+    test('Method notify() emits exactly one line when no tests fail', () {
       notifier.notify(_summary(TestOutcome.success));
       expect(output, hasLength(1));
+    });
+
+    test(
+        'Method notify() emits summary line plus blank plus one line per failed test',
+        () {
+      notifier.notify(
+        const RunSummary(
+          outcome: TestOutcome.failure,
+          passed: 0,
+          failed: 3,
+          skipped: 0,
+          failedTestNames: ['a', 'b', 'c'],
+        ),
+      );
+      // summary + blank + 3 failed names
+      expect(output, hasLength(5));
     });
   });
 }
