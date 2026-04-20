@@ -210,6 +210,73 @@ void main() {
     });
   });
 
+  group('Method run() attaches elapsed duration to the summary', () {
+    test('Method run() sets a non-null duration on the summary', () async {
+      final notifier = _FakeNotifier();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: ['{"type":"done","success":true}'],
+          exitCode: 0,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+      );
+
+      await taskflare.run();
+
+      expect(notifier.received?.duration, isNotNull);
+    });
+  });
+
+  group('Method run() strips group prefix from onTestFailed name', () {
+    test('Method run() passes leaf test name without group prefix to onTestFailed',
+        () async {
+      final notifier = _FakeNotifier();
+      final failedNames = <String>[];
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"group","group":{"id":1,"name":"My group","parentID":0}}',
+            '{"type":"testStart","test":{"id":2,"name":"My group does fail","groupIDs":[0,1]}}',
+            '{"testID":2,"result":"failure","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":false}',
+          ],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        onTestFailed: (name) async => failedNames.add(name),
+      );
+
+      await taskflare.run();
+
+      expect(failedNames, equals(['does fail']));
+    });
+
+    test('Method run() passes full name to onTestFailed when test has no group',
+        () async {
+      final notifier = _FakeNotifier();
+      final failedNames = <String>[];
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"testStart","test":{"id":1,"name":"standalone failure","groupIDs":[0]}}',
+            '{"testID":1,"result":"failure","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":false}',
+          ],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        onTestFailed: (name) async => failedNames.add(name),
+      );
+
+      await taskflare.run();
+
+      expect(failedNames, equals(['standalone failure']));
+    });
+  });
+
   group('Method run() reports progress via progressReporter', () {
     test('Method run() calls progressReporter.update for each testDone event',
         () async {
@@ -232,6 +299,30 @@ void main() {
       await taskflare.run();
 
       expect(reporter.updateCount, equals(2));
+    });
+
+    test('Method run() calls progressReporter.onTestStart with leaf test name',
+        () async {
+      final notifier = _FakeNotifier();
+      final reporter = _FakeProgressReporter();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"group","group":{"id":1,"name":"My group","parentID":0}}',
+            '{"type":"testStart","test":{"id":2,"name":"My group does pass","groupIDs":[0,1]}}',
+            '{"testID":2,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":true}',
+          ],
+          exitCode: 0,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        progressReporter: reporter,
+      );
+
+      await taskflare.run();
+
+      expect(reporter.startedNames, equals(['does pass']));
     });
 
     test('Method run() calls progressReporter.done after stream completes',
@@ -290,6 +381,10 @@ class _FakeNotifier implements Notifier {
 class _FakeProgressReporter implements ProgressReporter {
   int updateCount = 0;
   int doneCount = 0;
+  final List<String> startedNames = [];
+
+  @override
+  void onTestStart(String name) => startedNames.add(name);
 
   @override
   void update(int passed, int failed, int skipped) => updateCount++;

@@ -116,23 +116,22 @@ void main() {
 
   group('Method notifyTestFailed() invokes PowerShell with the correct content',
       () {
-    test('Method notifyTestFailed() uses Test failed as the title', () async {
-      final calls = <_Call>[];
-      final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
-
-      await notifier.notifyTestFailed('some test name');
-
-      expect(calls.single.script, contains('Test failed'));
-    });
-
-    test('Method notifyTestFailed() includes the test name in the body',
-        () async {
+    test('Method notifyTestFailed() uses the test name as the title', () async {
       final calls = <_Call>[];
       final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
 
       await notifier.notifyTestFailed('my failing test');
 
       expect(calls.single.script, contains('my failing test'));
+    });
+
+    test('Method notifyTestFailed() uses Test failed as the body', () async {
+      final calls = <_Call>[];
+      final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
+
+      await notifier.notifyTestFailed('some test name');
+
+      expect(calls.single.script, contains('Test failed'));
     });
   });
 

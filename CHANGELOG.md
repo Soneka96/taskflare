@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5
+
+- Add elapsed time to console output: `[SUCCESS]  passed: 3  failed: 0  skipped: 0  (2.4s)`
+- Show currently running test name on its own line (`▶ test name`) before each progress update
+- Progress output now uses separate lines instead of overwriting with `\r`
+- Per-failure toast title is now the leaf test name; group prefix is stripped
+- Fix: per-failure toast now uses test name as title and "Test failed" as body
+
 ## 0.1.4
 
 - Fix: per-failure Windows toast now shows "Test failed" title with the test name in the body instead of "End of tests"

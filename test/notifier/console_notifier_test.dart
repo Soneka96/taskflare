@@ -103,6 +103,26 @@ void main() {
     });
   });
 
+  group('Method notify() outputs the elapsed duration', () {
+    test('Method notify() prints duration in seconds when duration is set', () {
+      notifier.notify(
+        const RunSummary(
+          outcome: TestOutcome.success,
+          passed: 3,
+          failed: 0,
+          skipped: 0,
+          duration: Duration(milliseconds: 1500),
+        ),
+      );
+      expect(output.first, contains('(1.5s)'));
+    });
+
+    test('Method notify() omits duration when duration is null', () {
+      notifier.notify(_summary(TestOutcome.success));
+      expect(output.first, isNot(contains('s)')));
+    });
+  });
+
   group('Method notify() outputs the crash error output', () {
     test('Method notify() prints error output lines when crashOutput is set',
         () {

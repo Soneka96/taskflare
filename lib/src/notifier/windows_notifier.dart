@@ -35,7 +35,7 @@ class WindowsNotifier implements Notifier {
   }
 
   Future<void> notifyTestFailed(String testName) async {
-    await _sendToast(title: 'Test failed', body: testName);
+    await _sendToast(title: testName, body: 'Test failed');
   }
 
   Future<void> _sendToast({

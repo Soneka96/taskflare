@@ -8,6 +8,7 @@ class RunSummary {
     required this.skipped,
     this.failedTestNames = const [],
     this.crashOutput,
+    this.duration,
   });
 
   final TestOutcome outcome;
@@ -15,9 +16,10 @@ class RunSummary {
   final int failed;
   final int skipped;
   final List<String> failedTestNames;
-
-  /// Stderr captured from the process when the outcome is [TestOutcome.crash].
   final String? crashOutput;
+
+  /// Elapsed wall-clock time from process start to stream completion.
+  final Duration? duration;
 
   RunSummary copyWith({
     TestOutcome? outcome,
@@ -26,6 +28,7 @@ class RunSummary {
     int? skipped,
     List<String>? failedTestNames,
     String? crashOutput,
+    Duration? duration,
   }) {
     return RunSummary(
       outcome: outcome ?? this.outcome,
@@ -34,6 +37,7 @@ class RunSummary {
       skipped: skipped ?? this.skipped,
       failedTestNames: failedTestNames ?? this.failedTestNames,
       crashOutput: crashOutput ?? this.crashOutput,
+      duration: duration ?? this.duration,
     );
   }
 
@@ -46,6 +50,7 @@ class RunSummary {
         other.failed == failed &&
         other.skipped == skipped &&
         other.crashOutput == crashOutput &&
+        other.duration == duration &&
         _listEquals(other.failedTestNames, failedTestNames);
   }
 
@@ -56,13 +61,15 @@ class RunSummary {
         failed,
         skipped,
         crashOutput,
+        duration,
         Object.hashAll(failedTestNames),
       );
 
   @override
   String toString() => 'RunSummary(outcome: $outcome, passed: $passed, '
       'failed: $failed, skipped: $skipped, '
-      'failedTestNames: $failedTestNames, crashOutput: $crashOutput)';
+      'failedTestNames: $failedTestNames, crashOutput: $crashOutput, '
+      'duration: $duration)';
 }
 
 bool _listEquals<T>(List<T> a, List<T> b) {

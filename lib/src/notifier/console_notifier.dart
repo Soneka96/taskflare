@@ -16,8 +16,12 @@ class ConsoleNotifier implements Notifier {
       TestOutcome.crash => '[CRASH]  ',
     };
 
+    final durationSuffix = summary.duration != null
+        ? '  (${(summary.duration!.inMilliseconds / 1000).toStringAsFixed(1)}s)'
+        : '';
+
     _printer('$label  passed: ${summary.passed}  '
-        'failed: ${summary.failed}  skipped: ${summary.skipped}');
+        'failed: ${summary.failed}  skipped: ${summary.skipped}$durationSuffix');
 
     if (summary.failedTestNames.isNotEmpty) {
       _printer('');

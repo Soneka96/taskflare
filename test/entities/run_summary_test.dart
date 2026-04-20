@@ -87,6 +87,23 @@ void main() {
       final result = withCrash.copyWith(passed: 1);
       expect(result.crashOutput, equals('error text'));
     });
+
+    test('Method copyWith() returns a new instance with duration replaced', () {
+      final result = base.copyWith(duration: const Duration(seconds: 5));
+      expect(result.duration, equals(const Duration(seconds: 5)));
+    });
+
+    test('Method copyWith() preserves duration when not provided', () {
+      const withDuration = RunSummary(
+        outcome: TestOutcome.success,
+        passed: 1,
+        failed: 0,
+        skipped: 0,
+        duration: Duration(seconds: 3),
+      );
+      final result = withDuration.copyWith(passed: 2);
+      expect(result.duration, equals(const Duration(seconds: 3)));
+    });
   });
 
   group('RunSummary\'s equality behaves correctly', () {
@@ -130,6 +147,17 @@ void main() {
         failedTestNames: ['test A'],
       );
       expect(base, isNot(equals(other)));
+    });
+
+    test('Two instances with different duration are not equal', () {
+      const withDuration = RunSummary(
+        outcome: TestOutcome.success,
+        passed: 5,
+        failed: 0,
+        skipped: 1,
+        duration: Duration(seconds: 2),
+      );
+      expect(base, isNot(equals(withDuration)));
     });
 
     test('Two instances with different crashOutput are not equal', () {
