@@ -1,5 +1,5 @@
 import '../entities/run_summary.dart';
 
 abstract class Notifier {
-  void notify(RunSummary summary);
+  Future<void> notify(RunSummary summary);
 }

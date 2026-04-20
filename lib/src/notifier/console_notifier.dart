@@ -9,7 +9,7 @@ class ConsoleNotifier implements Notifier {
   final void Function(String) _printer;
 
   @override
-  void notify(RunSummary summary) {
+  Future<void> notify(RunSummary summary) async {
     final label = switch (summary.outcome) {
       TestOutcome.success => '[SUCCESS]',
       TestOutcome.failure => '[FAILURE]',

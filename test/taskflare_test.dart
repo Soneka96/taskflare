@@ -135,7 +135,7 @@ class _FakeNotifier implements Notifier {
   int callCount = 0;
 
   @override
-  void notify(RunSummary summary) {
+  Future<void> notify(RunSummary summary) async {
     received = summary;
     callCount++;
   }

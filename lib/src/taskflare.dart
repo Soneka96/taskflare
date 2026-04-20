@@ -16,6 +16,6 @@ class Taskflare {
   Future<void> run() async {
     final result = await runner.run();
     final summary = parser.parse(result.lines, result.exitCode);
-    notifier.notify(summary);
+    await notifier.notify(summary);
   }
 }
