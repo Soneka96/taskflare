@@ -1,17 +1,17 @@
 abstract class CommandRunner {
   const CommandRunner();
 
-  Future<CommandResult> run();
+  Future<CommandProcess> start();
 }
 
-class CommandResult {
-  const CommandResult({
-    required this.lines,
-    required this.stderrLines,
+class CommandProcess {
+  CommandProcess({
+    required this.stdout,
+    required this.stderr,
     required this.exitCode,
   });
 
-  final List<String> lines;
-  final List<String> stderrLines;
-  final int exitCode;
+  final Stream<String> stdout;
+  final Stream<String> stderr;
+  final Future<int> exitCode;
 }

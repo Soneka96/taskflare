@@ -13,7 +13,7 @@ class FlutterTestRunner extends CommandRunner {
   final String? workingDirectory;
 
   @override
-  Future<CommandResult> run() async {
+  Future<CommandProcess> start() async {
     final process = await Process.start(
       'flutter',
       ['test', '--machine', ...arguments],
@@ -21,26 +21,14 @@ class FlutterTestRunner extends CommandRunner {
       runInShell: true,
     );
 
-    final lines = <String>[];
-    final stderrLines = <String>[];
-
-    await Future.wait([
-      process.stdout
+    return CommandProcess(
+      stdout: process.stdout
           .transform(const SystemEncoding().decoder)
-          .transform(const LineSplitter())
-          .forEach(lines.add),
-      process.stderr
+          .transform(const LineSplitter()),
+      stderr: process.stderr
           .transform(const SystemEncoding().decoder)
-          .transform(const LineSplitter())
-          .forEach(stderrLines.add),
-    ]);
-
-    final exitCode = await process.exitCode;
-
-    return CommandResult(
-      lines: lines,
-      stderrLines: stderrLines,
-      exitCode: exitCode,
+          .transform(const LineSplitter()),
+      exitCode: process.exitCode,
     );
   }
 }

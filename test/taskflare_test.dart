@@ -1,5 +1,6 @@
 import 'package:taskflare/src/entities/run_summary.dart';
 import 'package:taskflare/src/notifier/notifier.dart';
+import 'package:taskflare/src/notifier/progress_reporter.dart';
 import 'package:taskflare/src/parser/json_event_parser.dart';
 import 'package:taskflare/src/runner/command_runner.dart';
 import 'package:taskflare/src/taskflare.dart';
@@ -98,7 +99,8 @@ void main() {
   });
 
   group('Method run() attaches crash output from stderr', () {
-    test('Method run() populates crashOutput when outcome is crash and stderr is non-empty',
+    test(
+        'Method run() populates crashOutput when outcome is crash and stderr is non-empty',
         () async {
       final notifier = _FakeNotifier();
       final taskflare = Taskflare(
@@ -113,7 +115,10 @@ void main() {
 
       await taskflare.run();
 
-      expect(notifier.received?.crashOutput, contains('Error: compilation failed'));
+      expect(
+        notifier.received?.crashOutput,
+        contains('Error: compilation failed'),
+      );
     });
 
     test('Method run() does not set crashOutput when outcome is success',
@@ -158,6 +163,98 @@ void main() {
       expect(notifier.callCount, equals(1));
     });
   });
+
+  group('Method run() calls onTestFailed for each failed test', () {
+    test('Method run() calls onTestFailed once per failed test', () async {
+      final notifier = _FakeNotifier();
+      final failedNames = <String>[];
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"testStart","test":{"id":1,"name":"my failing test"}}',
+            '{"testID":1,"result":"failure","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":false}',
+          ],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        onTestFailed: (name) async => failedNames.add(name),
+      );
+
+      await taskflare.run();
+
+      expect(failedNames, equals(['my failing test']));
+    });
+
+    test('Method run() does not call onTestFailed when all tests pass',
+        () async {
+      final notifier = _FakeNotifier();
+      final failedNames = <String>[];
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"testID":0,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":true}',
+          ],
+          exitCode: 0,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        onTestFailed: (name) async => failedNames.add(name),
+      );
+
+      await taskflare.run();
+
+      expect(failedNames, isEmpty);
+    });
+  });
+
+  group('Method run() reports progress via progressReporter', () {
+    test('Method run() calls progressReporter.update for each testDone event',
+        () async {
+      final notifier = _FakeNotifier();
+      final reporter = _FakeProgressReporter();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"testID":0,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":1,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":true}',
+          ],
+          exitCode: 0,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        progressReporter: reporter,
+      );
+
+      await taskflare.run();
+
+      expect(reporter.updateCount, equals(2));
+    });
+
+    test('Method run() calls progressReporter.done after stream completes',
+        () async {
+      final notifier = _FakeNotifier();
+      final reporter = _FakeProgressReporter();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"done","success":true}',
+          ],
+          exitCode: 0,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        progressReporter: reporter,
+      );
+
+      await taskflare.run();
+
+      expect(reporter.doneCount, equals(1));
+    });
+  });
 }
 
 class _FakeRunner extends CommandRunner {
@@ -172,10 +269,10 @@ class _FakeRunner extends CommandRunner {
   final int exitCode;
 
   @override
-  Future<CommandResult> run() async => CommandResult(
-        lines: lines,
-        stderrLines: stderrLines,
-        exitCode: exitCode,
+  Future<CommandProcess> start() async => CommandProcess(
+        stdout: Stream.fromIterable(lines),
+        stderr: Stream.fromIterable(stderrLines),
+        exitCode: Future.value(exitCode),
       );
 }
 
@@ -188,4 +285,15 @@ class _FakeNotifier implements Notifier {
     received = summary;
     callCount++;
   }
+}
+
+class _FakeProgressReporter implements ProgressReporter {
+  int updateCount = 0;
+  int doneCount = 0;
+
+  @override
+  void update(int passed, int failed, int skipped) => updateCount++;
+
+  @override
+  void done() => doneCount++;
 }

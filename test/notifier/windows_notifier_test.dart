@@ -7,8 +7,18 @@ import 'package:test/test.dart';
 
 void main() {
   group('Method notify() invokes PowerShell with the correct title', () {
-    test('Method notify() uses SUCCESS title when outcome is success',
-        () async {
+    test('Method notify() uses End of tests as the title', () async {
+      final calls = <_Call>[];
+      final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
+
+      await notifier.notify(_summary(TestOutcome.success));
+
+      expect(calls.single.script, contains('End of tests'));
+    });
+  });
+
+  group('Method notify() invokes PowerShell with the correct body', () {
+    test('Method notify() includes SUCCESS outcome in the body', () async {
       final calls = <_Call>[];
       final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
 
@@ -17,8 +27,7 @@ void main() {
       expect(calls.single.script, contains('SUCCESS'));
     });
 
-    test('Method notify() uses FAILURE title when outcome is failure',
-        () async {
+    test('Method notify() includes FAILURE outcome in the body', () async {
       final calls = <_Call>[];
       final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
 
@@ -27,7 +36,7 @@ void main() {
       expect(calls.single.script, contains('FAILURE'));
     });
 
-    test('Method notify() uses CRASH title when outcome is crash', () async {
+    test('Method notify() includes CRASH outcome in the body', () async {
       final calls = <_Call>[];
       final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
 
@@ -35,9 +44,7 @@ void main() {
 
       expect(calls.single.script, contains('CRASH'));
     });
-  });
 
-  group('Method notify() invokes PowerShell with the correct body', () {
     test('Method notify() includes passed count in the body', () async {
       final calls = <_Call>[];
       final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
@@ -79,7 +86,7 @@ void main() {
           outcome: TestOutcome.success,
           passed: 5,
           failed: 0,
-        skipped: 2,
+          skipped: 2,
         ),
       );
 

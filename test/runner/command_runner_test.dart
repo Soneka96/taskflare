@@ -2,41 +2,55 @@ import 'package:taskflare/src/runner/command_runner.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('CommandResult stores the correct values', () {
-    test('CommandResult stores stdout lines', () {
-      const result =
-          CommandResult(lines: ['a', 'b'], stderrLines: [], exitCode: 0);
-      expect(result.lines, equals(['a', 'b']));
-    });
-
-    test('CommandResult stores stderr lines', () {
-      const result = CommandResult(
-        lines: [],
-        stderrLines: ['error one', 'error two'],
-        exitCode: 1,
+  group('CommandProcess stdout stream emits the correct lines', () {
+    test('CommandProcess stdout emits the expected lines', () async {
+      final process = CommandProcess(
+        stdout: Stream.fromIterable(['a', 'b']),
+        stderr: Stream.empty(),
+        exitCode: Future.value(0),
       );
-      expect(result.stderrLines, equals(['error one', 'error two']));
+      expect(await process.stdout.toList(), equals(['a', 'b']));
     });
 
-    test('CommandResult stores exit code', () {
-      const result =
-          CommandResult(lines: [], stderrLines: [], exitCode: 42);
-      expect(result.exitCode, equals(42));
+    test('CommandProcess stdout emits empty list when no lines provided',
+        () async {
+      final process = CommandProcess(
+        stdout: Stream.empty(),
+        stderr: Stream.empty(),
+        exitCode: Future.value(0),
+      );
+      expect(await process.stdout.toList(), isEmpty);
+    });
+  });
+
+  group('CommandProcess stderr stream emits the correct lines', () {
+    test('CommandProcess stderr emits the expected lines', () async {
+      final process = CommandProcess(
+        stdout: Stream.empty(),
+        stderr: Stream.fromIterable(['error one', 'error two']),
+        exitCode: Future.value(1),
+      );
+      expect(await process.stderr.toList(), equals(['error one', 'error two']));
+    });
+  });
+
+  group('CommandProcess exitCode resolves to the correct value', () {
+    test('CommandProcess exitCode resolves to 0', () async {
+      final process = CommandProcess(
+        stdout: Stream.empty(),
+        stderr: Stream.empty(),
+        exitCode: Future.value(0),
+      );
+      expect(await process.exitCode, equals(0));
     });
 
-    test('CommandResult initializes with empty lines when empty list provided',
-        () {
-      const result =
-          CommandResult(lines: [], stderrLines: [], exitCode: 0);
-      expect(result.lines, isEmpty);
-    });
-
-    test(
-        'CommandResult initializes with empty stderrLines when empty list provided',
-        () {
-      const result =
-          CommandResult(lines: [], stderrLines: [], exitCode: 0);
-      expect(result.stderrLines, isEmpty);
+    test('CommandProcess exitCode resolves to non-zero', () async {
+      final process = CommandProcess(
+        stdout: Stream.empty(),
+        stderr: Stream.empty(),
+        exitCode: Future.value(42),
+      );
+      expect(await process.exitCode, equals(42));
     });
   });
 }

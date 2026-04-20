@@ -21,17 +21,17 @@ class WindowsNotifier implements Notifier {
 
   @override
   Future<void> notify(RunSummary summary) async {
-    final title = switch (summary.outcome) {
+    final outcome = switch (summary.outcome) {
       TestOutcome.success => 'SUCCESS',
       TestOutcome.failure => 'FAILURE',
       TestOutcome.crash => 'CRASH',
     };
 
-    final body = 'passed: ${summary.passed}  '
+    final body = '$outcome  passed: ${summary.passed}  '
         'failed: ${summary.failed}  '
         'skipped: ${summary.skipped}';
 
-    await _sendToast(title: title, body: body);
+    await _sendToast(title: 'End of tests', body: body);
   }
 
   Future<void> _sendToast({

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3
+
+- Add live progress counter: terminal updates in-place with `\r` showing running passed/failed/skipped counts
+- Send immediate Windows toast notification when each test fails (includes failed test name)
+- Final Windows notification now shows "End of tests" as title with outcome and counts in body
+- Add `ProgressReporter` abstraction and `ConsoleProgressReporter`
+- Add `onTestFailed` callback to `Taskflare` for per-failure side-effects
+- Replace batch `CommandResult` with streaming `CommandProcess` (stdout/stderr as `Stream<String>`, exitCode as `Future<int>`)
+
 ## 0.1.2
 
 - Fix: add `runInShell: true` to `FlutterTestRunner` and `DartTestRunner` so batch/cmd wrappers are resolved on Windows
