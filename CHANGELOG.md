@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.8
+
+- Progress line now shows time + counts + current test name on one overwriting line: `(9.1s)  passed: 108  failed: 1  skipped: 0  ▶ test name`
+- Progress line is erased at the end so only the final summary and failed test names remain
+- Truncates to terminal width to prevent line wrapping
+
 ## 0.1.7
 
 - Progress line now shows elapsed time before the test name: `(1.2 s)  ▶ test name`

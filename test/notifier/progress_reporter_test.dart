@@ -2,18 +2,17 @@ import 'package:taskflare/src/notifier/progress_reporter.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Method onTestStart() overwrites the current line with time and name',
-      () {
-    test('Method onTestStart() writes the test name to the sink', () {
+  group('Method onTestStart() renders the full progress line', () {
+    test('Method onTestStart() includes the test name', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.onTestStart('my test name', const Duration(seconds: 2));
+      reporter.onTestStart('my test name', Duration.zero);
 
       expect(sink.toString(), contains('my test name'));
     });
 
-    test('Method onTestStart() writes the elapsed time to the sink', () {
+    test('Method onTestStart() includes elapsed time in seconds', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
@@ -22,7 +21,7 @@ void main() {
       expect(sink.toString(), contains('1.5'));
     });
 
-    test('Method onTestStart() prefixes output with a carriage return', () {
+    test('Method onTestStart() prefixes output with carriage return', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
@@ -30,31 +29,64 @@ void main() {
 
       expect(sink.toString(), startsWith('\r'));
     });
+  });
 
-    test('Method onTestStart() pads output to clear previous longer line', () {
+  group('Method update() re-renders the progress line with new counts', () {
+    test('Method update() includes the passed count', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.onTestStart(
-        'a very long test name that takes lots of space',
-        Duration.zero,
-      );
-      reporter.onTestStart('short', Duration.zero);
+      reporter.update(7, 0, 0);
 
-      final output = sink.toString();
-      final secondWrite = output.substring(output.indexOf('\r', 1));
-      expect(secondWrite.length, greaterThan('  (0.0 s)  ▶ short'.length));
+      expect(sink.toString(), contains('passed: 7'));
+    });
+
+    test('Method update() includes the failed count', () {
+      final sink = StringBuffer();
+      final reporter = ConsoleProgressReporter(sink: sink);
+
+      reporter.update(0, 3, 0);
+
+      expect(sink.toString(), contains('failed: 3'));
+    });
+
+    test('Method update() includes the skipped count', () {
+      final sink = StringBuffer();
+      final reporter = ConsoleProgressReporter(sink: sink);
+
+      reporter.update(0, 0, 2);
+
+      expect(sink.toString(), contains('skipped: 2'));
+    });
+
+    test('Method update() retains the current test name', () {
+      final sink = StringBuffer();
+      final reporter = ConsoleProgressReporter(sink: sink);
+
+      reporter.onTestStart('running test', const Duration(seconds: 1));
+      reporter.update(1, 0, 0);
+
+      expect(sink.toString(), contains('running test'));
     });
   });
 
-  group('Method done() terminates the progress line', () {
-    test('Method done() writes a newline to the sink', () {
+  group('Method done() erases the progress line', () {
+    test('Method done() writes a carriage return to the sink', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
       reporter.done();
 
-      expect(sink.toString(), contains('\n'));
+      expect(sink.toString(), contains('\r'));
+    });
+
+    test('Method done() writes the ANSI erase-line sequence', () {
+      final sink = StringBuffer();
+      final reporter = ConsoleProgressReporter(sink: sink);
+
+      reporter.done();
+
+      expect(sink.toString(), contains('\x1b[K'));
     });
   });
 }
