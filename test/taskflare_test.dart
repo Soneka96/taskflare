@@ -14,7 +14,10 @@ void main() {
         runner: _FakeRunner(
           lines: [
             '{"type":"start","protocolVersion":"0.1.1"}',
-            '{"type":"done","success":true,"passedCount":3,"failedCount":0,"skippedCount":0}',
+            '{"testID":0,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":1,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":2,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":true}',
           ],
           exitCode: 0,
         ),
@@ -33,7 +36,10 @@ void main() {
         runner: _FakeRunner(
           lines: [
             '{"type":"start","protocolVersion":"0.1.1"}',
-            '{"type":"done","success":false,"passedCount":1,"failedCount":2,"skippedCount":0}',
+            '{"testID":0,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":1,"result":"failure","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":2,"result":"failure","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":false}',
           ],
           exitCode: 1,
         ),
@@ -64,7 +70,14 @@ void main() {
       final taskflare = Taskflare(
         runner: _FakeRunner(
           lines: [
-            '{"type":"done","success":true,"passedCount":5,"failedCount":0,"skippedCount":2}',
+            '{"testID":0,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":1,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":2,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":3,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":4,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":5,"result":"success","skipped":true,"hidden":false,"type":"testDone"}',
+            '{"testID":6,"result":"success","skipped":true,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":true}',
           ],
           exitCode: 0,
         ),
@@ -83,7 +96,8 @@ void main() {
       final taskflare = Taskflare(
         runner: _FakeRunner(
           lines: [
-            '{"type":"done","success":true,"passedCount":1,"failedCount":0,"skippedCount":0}',
+            '{"testID":0,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":true}',
           ],
           exitCode: 0,
         ),

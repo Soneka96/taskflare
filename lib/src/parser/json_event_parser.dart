@@ -27,14 +27,17 @@ class JsonEventParser {
       );
     }
 
-    final passed = (done['passedCount'] as int?) ?? 0;
-    final failed = (done['failedCount'] as int?) ?? 0;
-    final skipped = (done['skippedCount'] as int?) ?? 0;
-    final success = (done['success'] as bool?) ?? false;
+    final counts = _countResults(events);
+    final passed = counts.passed;
+    final failed = counts.failed;
+    final skipped = counts.skipped;
 
-    final outcome = exitCode != 0 && !success
+    // Prefer the done event's success flag; fall back to exit code.
+    final success = (done['success'] as bool?) ?? (exitCode == 0);
+
+    final outcome = !success
         ? (failed > 0 ? TestOutcome.failure : TestOutcome.crash)
-        : (failed > 0 ? TestOutcome.failure : TestOutcome.success);
+        : TestOutcome.success;
 
     return RunSummary(
       outcome: outcome,
@@ -67,4 +70,40 @@ class JsonEventParser {
     }
     return null;
   }
+
+  _TestCounts _countResults(List<Map<String, dynamic>> events) {
+    var passed = 0;
+    var failed = 0;
+    var skipped = 0;
+
+    for (final event in events) {
+      if (event['type'] != 'testDone') continue;
+      if (event['hidden'] == true) continue;
+
+      final result = event['result'] as String?;
+      final isSkipped = event['skipped'] == true;
+
+      if (isSkipped) {
+        skipped++;
+      } else if (result == 'success') {
+        passed++;
+      } else {
+        failed++;
+      }
+    }
+
+    return _TestCounts(passed: passed, failed: failed, skipped: skipped);
+  }
+}
+
+class _TestCounts {
+  const _TestCounts({
+    required this.passed,
+    required this.failed,
+    required this.skipped,
+  });
+
+  final int passed;
+  final int failed;
+  final int skipped;
 }

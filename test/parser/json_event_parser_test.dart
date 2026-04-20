@@ -24,68 +24,55 @@ void main() {
       expect(result.outcome, equals(TestOutcome.crash));
     });
 
-    test('returns success when all tests pass', () {
-      final lines = _buildDoneLines(
-        passed: 3,
-        failed: 0,
-        skipped: 0,
-        success: true,
-      );
+    test('returns success when done reports success', () {
+      final lines = [
+        ..._testDoneLines(passed: 3, failed: 0, skipped: 0),
+        '{"type":"done","success":true}',
+      ];
       final result = parser.parse(lines, 0);
       expect(result.outcome, equals(TestOutcome.success));
     });
 
-    test('returns failure when at least one test fails', () {
-      final lines = _buildDoneLines(
-        passed: 2,
-        failed: 1,
-        skipped: 0,
-        success: false,
-      );
+    test('returns failure when done reports failure and failed count is positive',
+        () {
+      final lines = [
+        ..._testDoneLines(passed: 2, failed: 1, skipped: 0),
+        '{"type":"done","success":false}',
+      ];
       final result = parser.parse(lines, 1);
       expect(result.outcome, equals(TestOutcome.failure));
     });
 
-    test('returns crash when exit code is non-zero and no failures recorded', () {
-      final lines = _buildDoneLines(
-        passed: 0,
-        failed: 0,
-        skipped: 0,
-        success: false,
-      );
+    test('returns crash when done reports failure and no failed tests counted',
+        () {
+      const lines = ['{"type":"done","success":false}'];
       final result = parser.parse(lines, 1);
       expect(result.outcome, equals(TestOutcome.crash));
     });
 
-    test('reports correct passed count', () {
-      final lines = _buildDoneLines(
-        passed: 7,
-        failed: 0,
-        skipped: 0,
-        success: true,
-      );
+    test('reports correct passed count from testDone events', () {
+      final lines = [
+        ..._testDoneLines(passed: 7, failed: 0, skipped: 0),
+        '{"type":"done","success":true}',
+      ];
       final result = parser.parse(lines, 0);
       expect(result.passed, equals(7));
     });
 
-    test('reports correct failed count', () {
-      final lines = _buildDoneLines(
-        passed: 1,
-        failed: 3,
-        skipped: 0,
-        success: false,
-      );
+    test('reports correct failed count from testDone events', () {
+      final lines = [
+        ..._testDoneLines(passed: 1, failed: 3, skipped: 0),
+        '{"type":"done","success":false}',
+      ];
       final result = parser.parse(lines, 1);
       expect(result.failed, equals(3));
     });
 
-    test('reports correct skipped count', () {
-      final lines = _buildDoneLines(
-        passed: 2,
-        failed: 0,
-        skipped: 4,
-        success: true,
-      );
+    test('reports correct skipped count from testDone events', () {
+      final lines = [
+        ..._testDoneLines(passed: 2, failed: 0, skipped: 4),
+        '{"type":"done","success":true}',
+      ];
       final result = parser.parse(lines, 0);
       expect(result.skipped, equals(4));
     });
@@ -95,7 +82,8 @@ void main() {
         'Observatory listening on http://127.0.0.1:0',
         '{"type":"start","protocolVersion":"0.1.1"}',
         'some stderr output',
-        '{"type":"done","success":true,"passedCount":1,"failedCount":0,"skippedCount":0}',
+        ..._testDoneLines(passed: 1, failed: 0, skipped: 0),
+        '{"type":"done","success":true}',
       ];
       final result = parser.parse(lines, 0);
       expect(result.outcome, equals(TestOutcome.success));
@@ -103,15 +91,26 @@ void main() {
 
     test('uses last done event when multiple are present', () {
       final lines = [
-        '{"type":"done","success":false,"passedCount":0,"failedCount":1,"skippedCount":0}',
-        '{"type":"done","success":true,"passedCount":5,"failedCount":0,"skippedCount":0}',
+        '{"type":"done","success":false}',
+        ..._testDoneLines(passed: 5, failed: 0, skipped: 0),
+        '{"type":"done","success":true}',
       ];
       final result = parser.parse(lines, 0);
       expect(result.outcome, equals(TestOutcome.success));
       expect(result.passed, equals(5));
     });
 
-    test('returns zero counts when done event has no count fields', () {
+    test('ignores hidden testDone events in counts', () {
+      final lines = [
+        '{"testID":1,"result":"success","skipped":false,"hidden":true,"type":"testDone"}',
+        '{"testID":2,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+        '{"type":"done","success":true}',
+      ];
+      final result = parser.parse(lines, 0);
+      expect(result.passed, equals(1));
+    });
+
+    test('returns zero counts when no testDone events are present', () {
       const lines = ['{"type":"done","success":true}'];
       final result = parser.parse(lines, 0);
       expect(result.passed, equals(0));
@@ -121,14 +120,29 @@ void main() {
   });
 }
 
-List<String> _buildDoneLines({
+List<String> _testDoneLines({
   required int passed,
   required int failed,
   required int skipped,
-  required bool success,
 }) {
-  return [
-    '{"type":"start","protocolVersion":"0.1.1"}',
-    '{"type":"done","success":$success,"passedCount":$passed,"failedCount":$failed,"skippedCount":$skipped}',
-  ];
+  var id = 0;
+  final lines = <String>[];
+
+  for (var i = 0; i < passed; i++) {
+    lines.add(
+      '{"testID":${id++},"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+    );
+  }
+  for (var i = 0; i < failed; i++) {
+    lines.add(
+      '{"testID":${id++},"result":"failure","skipped":false,"hidden":false,"type":"testDone"}',
+    );
+  }
+  for (var i = 0; i < skipped; i++) {
+    lines.add(
+      '{"testID":${id++},"result":"success","skipped":true,"hidden":false,"type":"testDone"}',
+    );
+  }
+
+  return lines;
 }
