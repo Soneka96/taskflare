@@ -114,6 +114,28 @@ void main() {
     });
   });
 
+  group('Method notifyTestFailed() invokes PowerShell with the correct content',
+      () {
+    test('Method notifyTestFailed() uses Test failed as the title', () async {
+      final calls = <_Call>[];
+      final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
+
+      await notifier.notifyTestFailed('some test name');
+
+      expect(calls.single.script, contains('Test failed'));
+    });
+
+    test('Method notifyTestFailed() includes the test name in the body',
+        () async {
+      final calls = <_Call>[];
+      final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
+
+      await notifier.notifyTestFailed('my failing test');
+
+      expect(calls.single.script, contains('my failing test'));
+    });
+  });
+
   group('Method notify() uses the correct app id', () {
     test('Method notify() uses custom appId when provided', () async {
       final calls = <_Call>[];
