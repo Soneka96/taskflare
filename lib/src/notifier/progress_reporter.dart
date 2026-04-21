@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import '../utils/enums.dart';
+
 abstract class ProgressReporter {
   void onTestStart(String name, Duration elapsed);
   void onTestDone(
     String name,
-    bool isSkipped,
-    bool isPassed,
+    String? fileRef,
+    TestResultKind result,
     int totalPassed,
     int totalFailed,
     int totalSkipped,
@@ -33,8 +35,8 @@ class ConsoleProgressReporter implements ProgressReporter {
   @override
   void onTestDone(
     String name,
-    bool isSkipped,
-    bool isPassed,
+    String? fileRef,
+    TestResultKind result,
     int totalPassed,
     int totalFailed,
     int totalSkipped,
@@ -43,17 +45,23 @@ class ConsoleProgressReporter implements ProgressReporter {
     _failed = totalFailed;
     _skipped = totalSkipped;
 
-    if (!isPassed || isSkipped) {
-      final label = isSkipped ? 'SKIP' : 'FAIL';
-      _sink.write('\r\x1b[K  $label  ▶ $name\n');
-      if (_currentName.isNotEmpty) _render();
-    }
+    final label = switch (result) {
+      TestResultKind.none || TestResultKind.passed => null,
+      TestResultKind.failed => 'FAIL ',
+      TestResultKind.errored => 'THROW',
+      TestResultKind.skipped => 'SKIP ',
+    };
+
+    if (label == null) return;
+
+    final filePart = fileRef != null ? '  $fileRef' : '';
+    _sink.write('\r\x1b[K  $label ▶ $name$filePart\n');
+    if (_currentName.isNotEmpty) _render();
   }
 
   @override
   void done() {
-    _sink
-        .write('\r\x1b[K'); // erase the progress line; summary prints from here
+    _sink.write('\r\x1b[K'); // erase the progress line; summary prints from here
   }
 
   void _render() {

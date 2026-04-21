@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
@@ -31,6 +32,7 @@ class Taskflare {
     final nameById = <int, String>{};
     final groupById = <int, String>{};
     final testGroupIds = <int, List<int>>{};
+    final fileById = <int, String?>{};
     final pendingNotifications = <Future<void>>[];
     var passed = 0;
     var failed = 0;
@@ -67,6 +69,7 @@ class Taskflare {
               final groupIds = rawGroupIds?.cast<int>() ?? <int>[];
               nameById[id] = name;
               testGroupIds[id] = groupIds;
+              fileById[id] = _fileRef(test);
               final isUserTest = groupIds.length > 1;
               if (isUserTest) {
                 final leaf = _leafTestName(name, groupIds, groupById);
@@ -79,12 +82,18 @@ class Taskflare {
           if (event['hidden'] == true) {
             return;
           }
-          String? result = event['result'];
-
-          bool isSkipped = event['skipped'] == true;
-          bool isPassed = result == 'success';
-
+          final result = event['result'] as String?;
+          final isSkipped = event['skipped'] == true;
+          final isPassed = result == 'success';
           final testId = event['testID'] as int?;
+
+          final resultKind = isSkipped
+              ? TestResultKind.skipped
+              : isPassed
+                  ? TestResultKind.passed
+                  : result == 'error'
+                      ? TestResultKind.errored
+                      : TestResultKind.failed;
 
           if (isSkipped) {
             skipped++;
@@ -108,14 +117,14 @@ class Taskflare {
           if (progressReporter != null && testId != null) {
             final groupIds = testGroupIds[testId] ?? [];
             final isUserTest = groupIds.length > 1;
-            if (isUserTest || !isPassed || isSkipped) {
+            if (isUserTest || resultKind != TestResultKind.passed) {
               final fullName = nameById[testId];
               if (fullName != null) {
                 final leafName = _leafTestName(fullName, groupIds, groupById);
                 progressReporter!.onTestDone(
                   leafName,
-                  isSkipped,
-                  isPassed,
+                  fileById[testId],   // relative path:line, e.g. test/foo_test.dart:10
+                  resultKind,
                   passed,
                   failed,
                   skipped,
@@ -164,6 +173,19 @@ class Taskflare {
           : fullName;
     }
     return fullName;
+  }
+
+  /// Builds a clickable file reference from a testStart [test] object.
+  /// Returns a relative path with optional line suffix, e.g. "test/foo_test.dart:10".
+  String? _fileRef(Map<String, dynamic> test) {
+    final url = test['url'] as String?;
+    if (url == null) return null;
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.scheme != 'file') return null;
+    final abs = uri.toFilePath();
+    final rel = p.relative(abs, from: Directory.current.path);
+    final line = test['line'] as int?;
+    return line != null ? '$rel:$line' : rel;
   }
 
   /// Replaces any absolute file path segment in [name] with just the filename.

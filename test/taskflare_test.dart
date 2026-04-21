@@ -376,6 +376,57 @@ void main() {
       expect(reporter.onTestDoneCount, equals(2));
     });
 
+    test(
+        'Method run() passes TestResultKind.errored for result "error" testDone',
+        () async {
+      final notifier = _FakeNotifier();
+      final reporter = _FakeProgressReporter();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"testStart","test":{"id":1,"name":"throws","groupIDs":[0]}}',
+            '{"testID":1,"result":"error","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":false}',
+          ],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        progressReporter: reporter,
+      );
+
+      await taskflare.run();
+
+      expect(reporter.doneCalls.single.$3, equals(TestResultKind.errored));
+    });
+
+    test(
+        'Method run() passes relative path with line to progressReporter.onTestDone',
+        () async {
+      final notifier = _FakeNotifier();
+      final reporter = _FakeProgressReporter();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"group","group":{"id":1,"name":"G","parentID":0}}',
+            '{"type":"testStart","test":{"id":2,"name":"G fails","groupIDs":[0,1],"url":"file:///C:/project/test/foo_test.dart","line":42}}',
+            '{"testID":2,"result":"failure","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":false}',
+          ],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        progressReporter: reporter,
+      );
+
+      await taskflare.run();
+
+      final fileRef = reporter.doneCalls.single.$2;
+      expect(fileRef, isNotNull);
+      expect(fileRef, endsWith('foo_test.dart:42'));
+    });
+
     test('Method run() calls progressReporter.onTestStart with leaf test name',
         () async {
       final notifier = _FakeNotifier();
@@ -457,6 +508,8 @@ class _FakeProgressReporter implements ProgressReporter {
   int onTestDoneCount = 0;
   int doneCount = 0;
   final List<String> startedNames = [];
+  final List<(String name, String? filename, TestResultKind result)> doneCalls =
+      [];
 
   @override
   void onTestStart(String name, Duration elapsed) => startedNames.add(name);
@@ -464,13 +517,15 @@ class _FakeProgressReporter implements ProgressReporter {
   @override
   void onTestDone(
     String name,
-    bool isSkipped,
-    bool isPassed,
+    String? filename,
+    TestResultKind result,
     int totalPassed,
     int totalFailed,
     int totalSkipped,
-  ) =>
-      onTestDoneCount++;
+  ) {
+    onTestDoneCount++;
+    doneCalls.add((name, filename, result));
+  }
 
   @override
   void done() => doneCount++;
