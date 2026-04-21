@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.10
+
+- Permanent `FAIL`, `THROW`, and `SKIP` lines in the terminal — each failed or skipped test prints a labelled line that stays visible, with a clickable `path/to/file.dart:line` reference for IDE navigation
+- Distinguish assertion failures (`FAIL`) from uncaught exceptions (`THROW`) using the raw JSON result field
+- Windows: auto-register `Taskflare.App` on first run — creates the registry key, ICO icon, and Start Menu shortcut so the notification header icon appears correctly without any manual setup
+- Bundled app icon (`lib/assets/icon.png`) written to `%LOCALAPPDATA%\Taskflare\taskflare.ico` on first run; replace it with any PNG to customise the icon
+- Re-registration is triggered automatically whenever the registry key, ICO file, or Start Menu shortcut is missing
+
 ## 0.1.9
 
 - Fix: progress line no longer spams when many tests complete in parallel — the line only re-renders when a new test starts, counts are stored internally and shown on the next render

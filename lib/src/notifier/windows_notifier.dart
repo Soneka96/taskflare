@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:taskflare/src/notifier/windows_initializer.dart';
 import 'package:taskflare/taskflare.dart';
 
 import 'notifier.dart';
@@ -11,7 +12,7 @@ typedef ProcessRunner = Future<ProcessResult> Function(
 
 class WindowsNotifier implements Notifier {
   WindowsNotifier({
-    String appId = 'Taskflare.App',
+    String appId = WindowsInitializer.appId,
     ProcessRunner? processRunner,
   })  : _appId = appId,
         _processRunner = processRunner ?? Process.run;
@@ -45,7 +46,6 @@ class WindowsNotifier implements Notifier {
     final escapedAppId = _escapePowerShellString(_appId);
     final escapedTitle = _escapeXml(title);
     final escapedBody = _escapeXml(body);
-
     final script = '''
 \$ErrorActionPreference = 'Stop'
 [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType=WindowsRuntime] | Out-Null
