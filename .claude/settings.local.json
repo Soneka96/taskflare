@@ -1,19 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(git checkout *)",
-      "Bash(dart pub *)",
-      "Bash(dart test *)",
-      "Bash(dart bin/taskflare.dart)",
-      "Bash(dart --version)",
-      "Bash(mv docs *)",
-      "Bash(rmdir assets *)",
-      "Bash(dart analyze *)",
-      "Bash(git add *)",
-      "Bash(git commit -m ' *)",
-      "Bash(git push *)",
-      "Bash(git commit -m 'feat: runtime display, current test name in progress, leaf name in toast \\(0.1.5\\) *)",
-      "Bash(git commit *)"
-    ]
+    "allow": ["Bash(dart test *)"]
   }
 }
