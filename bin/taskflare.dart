@@ -19,14 +19,14 @@ Future<void> main(List<String> args) async {
       ? FlutterTestRunner(arguments: args)
       : DartTestRunner(arguments: args);
 
-  final liveNotifier = WindowsNotifier();
+  final liveNotifier = WindowsNotifier(appId: 'Microsoft.Windows.Explorer');
 
   final taskflare = Taskflare(
     runner: runner,
     parser: JsonEventParser(),
     notifier: CompositeNotifier([
       const ConsoleNotifier(),
-      WindowsNotifier(),
+      WindowsNotifier(appId: 'Microsoft.Windows.Explorer'),
     ]),
     progressReporter: ConsoleProgressReporter(),
     onTestFailed: (name) => liveNotifier.notifyTestFailed(name),

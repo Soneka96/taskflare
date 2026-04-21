@@ -27,7 +27,8 @@ void main() {
       expect(calls.single.script, contains('SUCCESS'));
     });
 
-    test('Method notify() includes FAILURE outcome in the body', () async {
+    test('''Method notify() includes 
+    FAILURE outcome in the body''', () async {
       final calls = <_Call>[];
       final notifier = WindowsNotifier(processRunner: _fakeRunner(calls));
 

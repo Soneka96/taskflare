@@ -31,26 +31,62 @@ void main() {
     });
   });
 
-  group('Method update() stores counts for the next onTestStart render', () {
-    test('Method update() does not write to the sink immediately', () {
+  group('Method onTestDone()', () {
+    test('does not write to the sink when the test passed', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.update(7, 3, 1);
+      reporter.onTestDone('my test', false, true, 1, 0, 0);
 
       expect(sink.toString(), isEmpty);
     });
 
-    test('Method update() counts appear on next onTestStart render', () {
+    test('counts appear on next onTestStart render after a passed test', () {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.update(7, 3, 1);
+      reporter.onTestDone('my test', false, true, 7, 3, 1);
       reporter.onTestStart('next test', const Duration(seconds: 2));
 
       expect(sink.toString(), contains('passed: 7'));
       expect(sink.toString(), contains('failed: 3'));
       expect(sink.toString(), contains('skipped: 1'));
+    });
+
+    test('prints a permanent FAIL line when the test failed', () {
+      final sink = StringBuffer();
+      final reporter = ConsoleProgressReporter(sink: sink);
+
+      reporter.onTestDone('my failing test', false, false, 0, 1, 0);
+
+      expect(sink.toString(), contains('FAIL'));
+      expect(sink.toString(), contains('my failing test'));
+      expect(sink.toString(), contains('\n'));
+    });
+
+    test('prints a permanent SKIP line when the test was skipped', () {
+      final sink = StringBuffer();
+      final reporter = ConsoleProgressReporter(sink: sink);
+
+      reporter.onTestDone('my skipped test', true, false, 0, 0, 1);
+
+      expect(sink.toString(), contains('SKIP'));
+      expect(sink.toString(), contains('my skipped test'));
+      expect(sink.toString(), contains('\n'));
+    });
+
+    test('re-renders the progress line after a permanent FAIL line', () {
+      final sink = StringBuffer();
+      final reporter = ConsoleProgressReporter(sink: sink);
+      reporter.onTestStart('running test', const Duration(seconds: 1));
+      sink.clear();
+
+      reporter.onTestDone('other failing test', false, false, 0, 1, 0);
+
+      final output = sink.toString();
+      expect(output, contains('FAIL'));
+      expect(output, contains('other failing test\n'));
+      expect(output, contains('running test'));
     });
   });
 

@@ -23,13 +23,6 @@ class ConsoleNotifier implements Notifier {
     _printer('$label  passed: ${summary.passed}  '
         'failed: ${summary.failed}  skipped: ${summary.skipped}$durationSuffix');
 
-    if (summary.failedTestNames.isNotEmpty) {
-      _printer('');
-      for (final name in summary.failedTestNames) {
-        _printer('  FAILED: $name');
-      }
-    }
-
     if (summary.crashOutput != null && summary.crashOutput!.isNotEmpty) {
       _printer('');
       _printer('  ERROR OUTPUT:');

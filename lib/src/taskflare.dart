@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:path/path.dart' as p;
+
 import 'notifier/notifier.dart';
 import 'notifier/progress_reporter.dart';
 import 'parser/json_event_parser.dart';
@@ -40,7 +42,9 @@ class Taskflare {
       process.stdout.forEach((line) {
         lines.add(line);
         final event = _tryDecodeEvent(line);
-        if (event == null) return;
+        if (event == null) {
+          return;
+        }
 
         final type = event['type'] as String?;
 
@@ -49,7 +53,9 @@ class Taskflare {
           if (group != null) {
             final id = group['id'] as int?;
             final name = (group['name'] as String?) ?? '';
-            if (id != null) groupById[id] = name;
+            if (id != null) {
+              groupById[id] = name;
+            }
           }
         } else if (type == 'testStart') {
           final test = event['test'] as Map<String, dynamic>?;
@@ -61,7 +67,6 @@ class Taskflare {
               final groupIds = rawGroupIds?.cast<int>() ?? <int>[];
               nameById[id] = name;
               testGroupIds[id] = groupIds;
-              // skip auto-generated root-only tests (loading/compile stubs)
               final isUserTest = groupIds.length > 1;
               if (isUserTest) {
                 final leaf = _leafTestName(name, groupIds, groupById);
@@ -71,28 +76,53 @@ class Taskflare {
             }
           }
         } else if (type == 'testDone') {
-          if (event['hidden'] == true) return;
-          final result = event['result'] as String?;
-          final isSkipped = event['skipped'] == true;
+          if (event['hidden'] == true) {
+            return;
+          }
+          String? result = event['result'];
+
+          bool isSkipped = event['skipped'] == true;
+          bool isPassed = result == 'success';
+
           final testId = event['testID'] as int?;
 
           if (isSkipped) {
             skipped++;
-          } else if (result == 'success') {
+          } else if (isPassed) {
             passed++;
           } else {
             failed++;
             final fullName = testId != null ? nameById[testId] : null;
             if (fullName != null && onTestFailed != null) {
-              final leafName = _leafTestName(
-                fullName,
-                testGroupIds[testId] ?? [],
-                groupById,
+              final leafName = _stripFilePaths(
+                _leafTestName(
+                  fullName,
+                  testGroupIds[testId] ?? [],
+                  groupById,
+                ),
               );
               pendingNotifications.add(onTestFailed!(leafName));
             }
           }
-          progressReporter?.update(passed, failed, skipped);
+
+          if (progressReporter != null && testId != null) {
+            final groupIds = testGroupIds[testId] ?? [];
+            final isUserTest = groupIds.length > 1;
+            if (isUserTest || !isPassed || isSkipped) {
+              final fullName = nameById[testId];
+              if (fullName != null) {
+                final leafName = _leafTestName(fullName, groupIds, groupById);
+                progressReporter!.onTestDone(
+                  leafName,
+                  isSkipped,
+                  isPassed,
+                  passed,
+                  failed,
+                  skipped,
+                );
+              }
+            }
+          }
         }
       }),
       process.stderr.forEach(stderrLines.add),
@@ -125,7 +155,9 @@ class Taskflare {
   ) {
     for (final id in groupIds.reversed) {
       final groupName = groupById[id] ?? '';
-      if (groupName.isEmpty) continue;
+      if (groupName.isEmpty) {
+        continue;
+      }
       final prefix = '$groupName ';
       return fullName.startsWith(prefix)
           ? fullName.substring(prefix.length)
@@ -134,12 +166,25 @@ class Taskflare {
     return fullName;
   }
 
+  /// Replaces any absolute file path segment in [name] with just the filename.
+  /// e.g. "loading C:/some/path/foo_test.dart" → "loading foo_test.dart"
+  String _stripFilePaths(String name) {
+    return name.replaceAllMapped(
+      RegExp(r'(?:[A-Za-z]:[/\\]|(?<!\w)/)\S+'),
+      (match) => p.basename(match.group(0)!),
+    );
+  }
+
   Map<String, dynamic>? _tryDecodeEvent(String line) {
     final trimmed = line.trim();
-    if (trimmed.isEmpty) return null;
+    if (trimmed.isEmpty) {
+      return null;
+    }
     try {
       final decoded = jsonDecode(trimmed);
-      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
     } catch (_) {}
     return null;
   }

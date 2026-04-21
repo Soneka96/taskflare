@@ -275,18 +275,93 @@ void main() {
 
       expect(failedNames, equals(['standalone failure']));
     });
+
+    test(
+        'Method run() strips Windows file path to basename in onTestFailed name',
+        () async {
+      final notifier = _FakeNotifier();
+      final failedNames = <String>[];
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            r'{"type":"testStart","test":{"id":0,"name":"loading C:/BYME/SOLUTIONS/bhealthmobile/app/test/foo_test.dart","groupIDs":[0]}}',
+            '{"testID":0,"result":"error","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":false}',
+          ],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        onTestFailed: (name) async => failedNames.add(name),
+      );
+
+      await taskflare.run();
+
+      expect(failedNames, equals(['loading foo_test.dart']));
+    });
+
+    test('Method run() strips Unix file path to basename in onTestFailed name',
+        () async {
+      final notifier = _FakeNotifier();
+      final failedNames = <String>[];
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"testStart","test":{"id":0,"name":"loading /home/user/project/test/bar_test.dart","groupIDs":[0]}}',
+            '{"testID":0,"result":"error","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":false}',
+          ],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        onTestFailed: (name) async => failedNames.add(name),
+      );
+
+      await taskflare.run();
+
+      expect(failedNames, equals(['loading bar_test.dart']));
+    });
   });
 
   group('Method run() reports progress via progressReporter', () {
-    test('Method run() calls progressReporter.update for each testDone event',
+    test(
+        'Method run() calls progressReporter.onTestDone for a standalone failing test (no group)',
         () async {
       final notifier = _FakeNotifier();
       final reporter = _FakeProgressReporter();
       final taskflare = Taskflare(
         runner: _FakeRunner(
           lines: [
-            '{"testID":0,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
-            '{"testID":1,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"testStart","test":{"id":1,"name":"always fails","groupIDs":[0]}}',
+            '{"testID":1,"result":"failure","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":false}',
+          ],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+        progressReporter: reporter,
+      );
+
+      await taskflare.run();
+
+      expect(reporter.onTestDoneCount, equals(1));
+    });
+
+    test(
+        'Method run() calls progressReporter.onTestDone for each user testDone event',
+        () async {
+      final notifier = _FakeNotifier();
+      final reporter = _FakeProgressReporter();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"group","group":{"id":1,"name":"My group","parentID":0}}',
+            '{"type":"testStart","test":{"id":2,"name":"My group test one","groupIDs":[0,1]}}',
+            '{"type":"testStart","test":{"id":3,"name":"My group test two","groupIDs":[0,1]}}',
+            '{"testID":2,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"testID":3,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
             '{"type":"done","success":true}',
           ],
           exitCode: 0,
@@ -298,7 +373,7 @@ void main() {
 
       await taskflare.run();
 
-      expect(reporter.updateCount, equals(2));
+      expect(reporter.onTestDoneCount, equals(2));
     });
 
     test('Method run() calls progressReporter.onTestStart with leaf test name',
@@ -379,7 +454,7 @@ class _FakeNotifier implements Notifier {
 }
 
 class _FakeProgressReporter implements ProgressReporter {
-  int updateCount = 0;
+  int onTestDoneCount = 0;
   int doneCount = 0;
   final List<String> startedNames = [];
 
@@ -387,7 +462,15 @@ class _FakeProgressReporter implements ProgressReporter {
   void onTestStart(String name, Duration elapsed) => startedNames.add(name);
 
   @override
-  void update(int passed, int failed, int skipped) => updateCount++;
+  void onTestDone(
+    String name,
+    bool isSkipped,
+    bool isPassed,
+    int totalPassed,
+    int totalFailed,
+    int totalSkipped,
+  ) =>
+      onTestDoneCount++;
 
   @override
   void done() => doneCount++;

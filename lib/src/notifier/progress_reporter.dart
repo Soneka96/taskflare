@@ -2,7 +2,14 @@ import 'dart:io';
 
 abstract class ProgressReporter {
   void onTestStart(String name, Duration elapsed);
-  void update(int passed, int failed, int skipped);
+  void onTestDone(
+    String name,
+    bool isSkipped,
+    bool isPassed,
+    int totalPassed,
+    int totalFailed,
+    int totalSkipped,
+  );
   void done();
 }
 
@@ -18,22 +25,35 @@ class ConsoleProgressReporter implements ProgressReporter {
 
   @override
   void onTestStart(String name, Duration elapsed) {
-    _currentName = name;
+    _currentName = _normalize(name);
     _lastElapsed = elapsed;
     _render();
   }
 
   @override
-  void update(int passed, int failed, int skipped) {
-    _passed = passed;
-    _failed = failed;
-    _skipped = skipped;
-    // state is stored but not rendered — next onTestStart will pick it up
+  void onTestDone(
+    String name,
+    bool isSkipped,
+    bool isPassed,
+    int totalPassed,
+    int totalFailed,
+    int totalSkipped,
+  ) {
+    _passed = totalPassed;
+    _failed = totalFailed;
+    _skipped = totalSkipped;
+
+    if (!isPassed || isSkipped) {
+      final label = isSkipped ? 'SKIP' : 'FAIL';
+      _sink.write('\r\x1b[K  $label  ▶ $name\n');
+      if (_currentName.isNotEmpty) _render();
+    }
   }
 
   @override
   void done() {
-    _sink.write('\r\x1b[K'); // erase the progress line; summary prints from here
+    _sink
+        .write('\r\x1b[K'); // erase the progress line; summary prints from here
   }
 
   void _render() {
@@ -52,5 +72,9 @@ class ConsoleProgressReporter implements ProgressReporter {
       } catch (_) {}
     }
     return 120;
+  }
+
+  String _normalize(String input) {
+    return input.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 }

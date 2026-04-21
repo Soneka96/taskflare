@@ -67,42 +67,6 @@ void main() {
     });
   });
 
-  group('Method notify() outputs the correct failed test names', () {
-    test('Method notify() prints each failed test name on its own line', () {
-      notifier.notify(
-        const RunSummary(
-          outcome: TestOutcome.failure,
-          passed: 1,
-          failed: 2,
-          skipped: 0,
-          failedTestNames: ['test A', 'test B'],
-        ),
-      );
-      expect(output, contains('  FAILED: test A'));
-      expect(output, contains('  FAILED: test B'));
-    });
-
-    test('Method notify() prints no failed names when all tests pass', () {
-      notifier.notify(_summary(TestOutcome.success));
-      expect(output.any((l) => l.contains('FAILED:')), isFalse);
-    });
-
-    test(
-        'Method notify() prints an empty separator line before failed names',
-        () {
-      notifier.notify(
-        const RunSummary(
-          outcome: TestOutcome.failure,
-          passed: 0,
-          failed: 1,
-          skipped: 0,
-          failedTestNames: ['test A'],
-        ),
-      );
-      expect(output[1], equals(''));
-    });
-  });
-
   group('Method notify() outputs the elapsed duration', () {
     test('Method notify() prints duration in seconds when duration is set', () {
       notifier.notify(
@@ -135,7 +99,10 @@ void main() {
           crashOutput: 'Error: compilation failed\nlib/main.dart:1:1',
         ),
       );
-      expect(output.any((l) => l.contains('Error: compilation failed')), isTrue);
+      expect(
+        output.any((l) => l.contains('Error: compilation failed')),
+        isTrue,
+      );
       expect(output.any((l) => l.contains('lib/main.dart:1:1')), isTrue);
     });
 
@@ -155,30 +122,6 @@ void main() {
     test('Method notify() prints no error output when crashOutput is null', () {
       notifier.notify(_summary(TestOutcome.crash));
       expect(output.any((l) => l.contains('ERROR OUTPUT')), isFalse);
-    });
-
-  });
-
-  group('Method notify() behaves correctly', () {
-    test('Method notify() emits exactly one line when no tests fail', () {
-      notifier.notify(_summary(TestOutcome.success));
-      expect(output, hasLength(1));
-    });
-
-    test(
-        'Method notify() emits summary line plus blank plus one line per failed test',
-        () {
-      notifier.notify(
-        const RunSummary(
-          outcome: TestOutcome.failure,
-          passed: 0,
-          failed: 3,
-          skipped: 0,
-          failedTestNames: ['a', 'b', 'c'],
-        ),
-      );
-      // summary + blank + 3 failed names
-      expect(output, hasLength(5));
     });
   });
 }
