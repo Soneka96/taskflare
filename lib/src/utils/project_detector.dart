@@ -7,8 +7,11 @@ class ProjectDetector {
   /// (pubspec.yaml declares a dependency on flutter).
   bool isFlutterProject(String directory) {
     final pubspec = File('$directory${Platform.pathSeparator}pubspec.yaml');
-    if (!pubspec.existsSync()) return false;
+    if (!pubspec.existsSync()) {
+      return false;
+    }
+
     final content = pubspec.readAsStringSync();
-    return content.contains('flutter:') || content.contains('flutter ');
+    return RegExp(r'^\s+flutter:', multiLine: true).hasMatch(content);
   }
 }
