@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'command_registry.dart';
+import 'terminal.dart';
 
 /// Runs the help screen.
 ///
@@ -13,19 +14,30 @@ Future<void> runHelpCommand({String? commandName}) async {
     return;
   }
 
+  TerminalScreen? prev;
   while (true) {
+    prev?.clear();
     final registry = commandRegistry;
-    _printHelpIndex(registry);
+    final screen = TerminalScreen();
+    _printHelpIndex(registry, screen);
     final input = stdin.readLineSync()?.trim().toLowerCase();
-    if (input == 'b') return;
+    if (input == 'b') {
+      screen.clear();
+      return;
+    }
     final index = int.tryParse(input ?? '');
     if (index != null && index >= 1 && index <= registry.length) {
-      _printCommandHelpByEntry(registry[index - 1]);
-      stdout.writeln('');
-      stdout.write('  Press Enter to go back...');
+      screen.clear();
+      final detail = TerminalScreen();
+      _printCommandHelpByEntry(registry[index - 1], detail);
+      detail.writeln();
+      detail.write('  Press Enter to go back...');
       stdin.readLineSync();
+      detail.clear();
+      prev = null;
     } else {
-      stdout.writeln('  Enter a number or b to go back.');
+      screen.writeln('  Enter a number or b to go back.');
+      prev = screen;
     }
   }
 }
@@ -34,33 +46,36 @@ void _printCommandHelp(String name) {
   final registry = commandRegistry;
   final entry = registry.where((e) => e.profile.name == name).firstOrNull;
   if (entry == null) {
-    stdout.writeln('');
+    stdout.writeln();
     stdout.writeln("  Unknown command '$name'.");
     stdout.writeln(
       '  Available: ${registry.map((e) => e.profile.name).join(', ')}',
     );
-    stdout.writeln('');
+    stdout.writeln();
     return;
   }
-  _printCommandHelpByEntry(entry);
+  final s = TerminalScreen();
+  _printCommandHelpByEntry(entry, s);
 }
 
-void _printCommandHelpByEntry(CliCommandEntry entry) {
-  stdout.writeln('');
-  stdout.writeln('  ${entry.profile.name} — ${entry.profile.description}');
-  stdout.writeln('');
-  stdout.writeln(entry.profile.helpText);
+void _printCommandHelpByEntry(CliCommandEntry entry, TerminalScreen s) {
+  s.writeln();
+  s.writeln('  ${entry.profile.name} — ${entry.profile.description}');
+  s.writeln();
+  for (final line in entry.profile.helpText.split('\n')) {
+    s.writeln(line);
+  }
 }
 
-void _printHelpIndex(List<CliCommandEntry> registry) {
-  stdout.writeln('');
-  stdout.writeln('  Help — available commands');
-  stdout.writeln('');
+void _printHelpIndex(List<CliCommandEntry> registry, TerminalScreen s) {
+  s.writeln();
+  s.writeln('  Help — available commands');
+  s.writeln();
   for (var i = 0; i < registry.length; i++) {
     final e = registry[i];
-    stdout.writeln('  ${i + 1}) ${e.profile.name.padRight(14)}${e.profile.description}');
+    s.writeln('  ${i + 1}) ${e.profile.name.padRight(14)}${e.profile.description}');
   }
-  stdout.writeln('  b) Back');
-  stdout.writeln('');
-  stdout.write('Choose: ');
+  s.writeln('  b) Back');
+  s.writeln();
+  s.write('Choose: ');
 }
