@@ -21,7 +21,9 @@ abstract class TestEvent {
   /// or has an unrecognised event type.
   static TestEvent? tryDecode(String line) {
     final trimmed = line.trim();
-    if (trimmed.isEmpty) return null;
+    if (trimmed.isEmpty) {
+      return null;
+    }
     try {
       final json = jsonDecode(trimmed) as Map<String, dynamic>;
       return switch (json['type'] as String?) {
