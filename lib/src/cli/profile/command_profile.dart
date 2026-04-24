@@ -13,6 +13,9 @@ abstract class CommandProfile {
   /// Human-readable description shown in `taskflare help`.
   String get description;
 
+  /// Detailed help text printed when the user selects this command in `taskflare help`.
+  String get helpText;
+
   /// The command string shown in the report header (e.g. `'dart test'`).
   String get commandLabel;
 
