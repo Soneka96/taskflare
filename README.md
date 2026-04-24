@@ -14,17 +14,35 @@ Every run ends with exactly one of three outcomes:
 
 ## Usage
 
-Run it from the root of any Dart or Flutter project:
+Run it from the root of any Dart or Flutter project.
+
+### Interactive menu
 
 ```sh
 dart run taskflare
 ```
 
-Pass any arguments you would normally pass to `dart test`:
+Opens the main menu with options for Help, Config, and Run command. Designed for exploring taskflare for the first time.
+
+### Run tests directly
 
 ```sh
-dart run taskflare --name "my test"
-dart run taskflare test/parser/
+dart run taskflare test
+dart run taskflare test --name "my test"
+dart run taskflare test test/parser/
+```
+
+### Help
+
+```sh
+dart run taskflare help           # Interactive command list
+dart run taskflare help test      # Print test command help directly
+```
+
+### Config
+
+```sh
+dart run taskflare config         # Interactive configuration menu
 ```
 
 Example output:

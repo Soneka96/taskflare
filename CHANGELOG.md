@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.11
+
+- Interactive main menu shown when running `taskflare` with no arguments — logo, tagline, and options for Help, Config, Run command, and Quit
+- `taskflare help` opens an interactive command list; `taskflare help test` prints help non-interactively
+- `taskflare` with no arguments no longer auto-runs tests — use `taskflare test` or choose "Run command" from the menu
+- All menu-driven screens are backed by a central command registry — adding a future command requires one entry
+
 ## 0.1.10
 
 - Permanent `FAIL`, `THROW`, and `SKIP` lines in the terminal — each failed or skipped test prints a labelled line that stays visible, with a clickable `path/to/file.dart:line` reference for IDE navigation

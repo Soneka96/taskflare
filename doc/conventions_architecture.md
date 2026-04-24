@@ -4,6 +4,14 @@
 
 ```text
 lib/src/
+├── cli/                # Entry-point commands: menu, help, run, config
+│   ├── profile/        # CommandProfile abstractions and concrete impls (TestProfile, …)
+│   ├── command_registry.dart   # Central list of all runnable commands
+│   ├── menu_command.dart       # Main interactive menu (bare `taskflare`)
+│   ├── help_command.dart       # Help screen and per-command help
+│   ├── run_command.dart        # "Run command" submenu
+│   ├── config_command.dart     # Config menu
+│   └── test_command.dart       # Wires Taskflare for the `test` command
 ├── entities/     # Pure data classes — no I/O, no business logic
 ├── utils/        # Shared utilities: enums, constants, helpers
 ├── parser/       # Transforms raw output into domain types
@@ -43,6 +51,15 @@ lib/src/
 - Provide `copyWith` when the entity has more than one field
 - Override `==` and `hashCode` (or use `package:equatable` if added)
 - No methods that perform I/O or computation beyond value transformation
+
+## Adding a New Command
+
+1. Create `lib/src/cli/profile/{name}_profile.dart` extending `CommandProfile`
+   — implement `name`, `description`, `helpText`, `commandLabel`, and `buildRunner`
+2. Add an entry to `commandRegistry` in `lib/src/cli/command_registry.dart`
+   — the menu, help screen, and run submenu all derive from this list automatically
+3. If the command needs its own wiring (e.g. custom notifier or config), create
+   `lib/src/cli/{name}_command.dart` and reference it from the registry entry
 
 ## Adding a New Runner
 
