@@ -22,14 +22,17 @@ lib/src/
 
 ## Layer Rules
 
-| Layer        | Allowed dependencies | Forbidden                        |
-| ------------ | -------------------- | -------------------------------- |
-| `entities`   | `utils`              | everything else                  |
-| `utils`      | nothing              | everything                       |
-| `parser`     | `entities`, `utils`  | `runner`, `notifier`             |
-| `runner`     | `utils`              | `parser`, `notifier`, `entities` |
-| `notifier`   | `entities`, `utils`  | `runner`, `parser`               |
-| orchestrator | all layers           | —                                |
+| Layer        | Allowed dependencies                                     | Forbidden                        |
+| ------------ | -------------------------------------------------------- | -------------------------------- |
+| `utils`      | nothing                                                  | everything                       |
+| `entities`   | `utils`                                                  | everything else                  |
+| `config`     | nothing (pure preferences)                               | everything                       |
+| `parser`     | `entities`, `utils`                                      | `runner`, `notifier`, `cli`      |
+| `runner`     | `utils`                                                  | `parser`, `notifier`, `entities` |
+| `reporter`   | `entities`, `utils`                                      | `runner`, `parser`, `notifier`   |
+| `notifier`   | `entities`, `utils`                                      | `runner`, `parser`, `cli`        |
+| orchestrator | `runner`, `parser`, `notifier`, `reporter`, `entities`   | `cli`                            |
+| `cli`        | all layers (entry-point wiring only)                     | —                                |
 
 ## Naming
 
