@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.11
+## 0.2.0
 
 - Interactive main menu shown when running `taskflare` with no arguments — logo, tagline, and options for Help, Config, Run command, and Quit
 - `taskflare help` opens an interactive command list; `taskflare help test` prints help non-interactively
