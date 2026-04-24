@@ -397,7 +397,7 @@ void main() {
 
       await taskflare.run();
 
-      expect(reporter.doneCalls.single.$3, equals(TestResultKind.errored));
+      expect(reporter.doneCalls.single.result, equals(TestResultKind.errored));
     });
 
     test(
@@ -422,7 +422,7 @@ void main() {
 
       await taskflare.run();
 
-      final fileRef = reporter.doneCalls.single.$2;
+      final fileRef = reporter.doneCalls.single.fileRef;
       expect(fileRef, isNotNull);
       expect(fileRef, endsWith('foo_test.dart:42'));
     });
@@ -508,23 +508,22 @@ class _FakeProgressReporter implements ProgressReporter {
   int onTestDoneCount = 0;
   int doneCount = 0;
   final List<String> startedNames = [];
-  final List<(String name, String? filename, TestResultKind result)> doneCalls =
-      [];
+  final List<({String name, String? fileRef, TestResultKind result})> doneCalls = [];
 
   @override
   void onTestStart(String name, Duration elapsed) => startedNames.add(name);
 
   @override
-  void onTestDone(
-    String name,
-    String? filename,
-    TestResultKind result,
-    int totalPassed,
-    int totalFailed,
-    int totalSkipped,
-  ) {
+  void onTestDone({
+    required String name,
+    String? fileRef,
+    required TestResultKind result,
+    required int totalPassed,
+    required int totalFailed,
+    required int totalSkipped,
+  }) {
     onTestDoneCount++;
-    doneCalls.add((name, filename, result));
+    doneCalls.add((name: name, fileRef: fileRef, result: result));
   }
 
   @override

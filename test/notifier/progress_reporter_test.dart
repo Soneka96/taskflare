@@ -37,7 +37,7 @@ void main() {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.onTestDone('my test', null, TestResultKind.passed, 1, 0, 0);
+      reporter.onTestDone(name: 'my test', result: TestResultKind.passed, totalPassed: 1, totalFailed: 0, totalSkipped: 0);
 
       expect(sink.toString(), isEmpty);
     });
@@ -46,7 +46,7 @@ void main() {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.onTestDone('my test', null, TestResultKind.passed, 7, 3, 1);
+      reporter.onTestDone(name: 'my test', result: TestResultKind.passed, totalPassed: 7, totalFailed: 3, totalSkipped: 1);
       reporter.onTestStart('next test', const Duration(seconds: 2));
 
       expect(sink.toString(), contains('passed: 7'));
@@ -58,7 +58,7 @@ void main() {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.onTestDone('my failing test', null, TestResultKind.failed, 0, 1, 0);
+      reporter.onTestDone(name: 'my failing test', result: TestResultKind.failed, totalPassed: 0, totalFailed: 1, totalSkipped: 0);
 
       expect(sink.toString(), contains('FAIL'));
       expect(sink.toString(), contains('my failing test'));
@@ -69,7 +69,7 @@ void main() {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.onTestDone('my error test', null, TestResultKind.errored, 0, 1, 0);
+      reporter.onTestDone(name: 'my error test', result: TestResultKind.errored, totalPassed: 0, totalFailed: 1, totalSkipped: 0);
 
       expect(sink.toString(), contains('THROW'));
       expect(sink.toString(), contains('my error test'));
@@ -80,7 +80,7 @@ void main() {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.onTestDone('my skipped test', null, TestResultKind.skipped, 0, 0, 1);
+      reporter.onTestDone(name: 'my skipped test', result: TestResultKind.skipped, totalPassed: 0, totalFailed: 0, totalSkipped: 1);
 
       expect(sink.toString(), contains('SKIP'));
       expect(sink.toString(), contains('my skipped test'));
@@ -92,10 +92,12 @@ void main() {
       final reporter = ConsoleProgressReporter(sink: sink);
 
       reporter.onTestDone(
-        'my failing test',
-        r'test\foo_test.dart:10',
-        TestResultKind.failed,
-        0, 1, 0,
+        name: 'my failing test',
+        fileRef: r'test\foo_test.dart:10',
+        result: TestResultKind.failed,
+        totalPassed: 0,
+        totalFailed: 1,
+        totalSkipped: 0,
       );
 
       expect(sink.toString(), contains(r'test\foo_test.dart:10'));
@@ -105,7 +107,7 @@ void main() {
       final sink = StringBuffer();
       final reporter = ConsoleProgressReporter(sink: sink);
 
-      reporter.onTestDone('my failing test', null, TestResultKind.failed, 0, 1, 0);
+      reporter.onTestDone(name: 'my failing test', result: TestResultKind.failed, totalPassed: 0, totalFailed: 1, totalSkipped: 0);
 
       expect(sink.toString(), isNot(contains('.dart')));
     });
@@ -116,7 +118,7 @@ void main() {
       reporter.onTestStart('running test', const Duration(seconds: 1));
       sink.clear();
 
-      reporter.onTestDone('other failing test', null, TestResultKind.failed, 0, 1, 0);
+      reporter.onTestDone(name: 'other failing test', result: TestResultKind.failed, totalPassed: 0, totalFailed: 1, totalSkipped: 0);
 
       final output = sink.toString();
       expect(output, contains('FAIL'));

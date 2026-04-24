@@ -4,14 +4,16 @@ import '../utils/enums.dart';
 
 abstract class ProgressReporter {
   void onTestStart(String name, Duration elapsed);
-  void onTestDone(
-    String name,
+
+  void onTestDone({
+    required String name,
     String? fileRef,
-    TestResultKind result,
-    int totalPassed,
-    int totalFailed,
-    int totalSkipped,
-  );
+    required TestResultKind result,
+    required int totalPassed,
+    required int totalFailed,
+    required int totalSkipped,
+  });
+
   void done();
 }
 
@@ -33,14 +35,14 @@ class ConsoleProgressReporter implements ProgressReporter {
   }
 
   @override
-  void onTestDone(
-    String name,
+  void onTestDone({
+    required String name,
     String? fileRef,
-    TestResultKind result,
-    int totalPassed,
-    int totalFailed,
-    int totalSkipped,
-  ) {
+    required TestResultKind result,
+    required int totalPassed,
+    required int totalFailed,
+    required int totalSkipped,
+  }) {
     _passed = totalPassed;
     _failed = totalFailed;
     _skipped = totalSkipped;
@@ -52,16 +54,20 @@ class ConsoleProgressReporter implements ProgressReporter {
       TestResultKind.skipped => 'SKIP ',
     };
 
-    if (label == null) return;
+    if (label == null) {
+      return;
+    }
 
     final filePart = fileRef != null ? '  $fileRef' : '';
     _sink.write('\r\x1b[K  $label ▶ $name$filePart\n');
-    if (_currentName.isNotEmpty) _render();
+    if (_currentName.isNotEmpty) {
+      _render();
+    }
   }
 
   @override
   void done() {
-    _sink.write('\r\x1b[K'); // erase the progress line; summary prints from here
+    _sink.write('\r\x1b[K');
   }
 
   void _render() {
