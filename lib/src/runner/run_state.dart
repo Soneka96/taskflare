@@ -23,6 +23,7 @@ class RunState {
   final _groupById = <int, String>{};
   final _testGroupIds = <int, List<int>>{};
   final _fileById = <int, String?>{};
+  final _startTimeById = <int, DateTime>{};
 
   /// Number of tests that have passed so far.
   int passed = 0;
@@ -39,11 +40,12 @@ class RunState {
   }
 
   /// Records a test start from a [TestStartEvent], storing its name, group membership,
-  /// and file reference for later lookup.
+  /// file reference, and start time for later lookup.
   void recordTestStart(TestStartEvent e) {
     _nameById[e.id] = e.name;
     _testGroupIds[e.id] = e.groupIds;
     _fileById[e.id] = _buildFileRef(e.url, e.line);
+    _startTimeById[e.id] = DateTime.now();
   }
 
   /// Records a test completion from a [TestDoneEvent], increments the appropriate counter,
@@ -82,6 +84,28 @@ class RunState {
 
   /// Returns the `file:line` reference for the test, or `null` if the source location is unavailable.
   String? fileRef(int testId) => _fileById[testId];
+
+  /// Returns the name of the outermost named group that contains the test.
+  ///
+  /// Returns an empty string for tests that belong to no named group.
+  String outerGroupName(int testId) {
+    final groupIds = _testGroupIds[testId] ?? [];
+    for (final id in groupIds) {
+      final name = _groupById[id] ?? '';
+      if (name.isNotEmpty) {
+        return name;
+      }
+    }
+    return '';
+  }
+
+  /// Returns the wall-clock duration from when the test started to now.
+  ///
+  /// Returns `null` if no start time was recorded for [testId].
+  Duration? testElapsed(int testId) {
+    final start = _startTimeById[testId];
+    return start != null ? DateTime.now().difference(start) : null;
+  }
 
   String _stripGroupPrefix(String fullName, List<int> groupIds) {
     for (final id in groupIds.reversed) {
