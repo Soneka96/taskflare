@@ -33,7 +33,24 @@ class ConsoleProgressReporter implements ProgressReporter {
   /// Creates a [ConsoleProgressReporter].
   ///
   /// [sink] defaults to [stdout] when omitted.
-  ConsoleProgressReporter({StringSink? sink}) : _sink = sink ?? stdout;
+  /// [showFailed], [showErrored], and [showSkipped] control which permanent
+  /// result lines are printed. These flags affect only terminal output —
+  /// the report file and final notification always include everything.
+  ConsoleProgressReporter({
+    this.showFailed = true,
+    this.showErrored = true,
+    this.showSkipped = true,
+    StringSink? sink,
+  }) : _sink = sink ?? stdout;
+
+  /// Whether to print a permanent FAIL line when a test fails.
+  final bool showFailed;
+
+  /// Whether to print a permanent THROW line when a test errors.
+  final bool showErrored;
+
+  /// Whether to print a permanent SKIP line when a test is skipped.
+  final bool showSkipped;
 
   final StringSink _sink;
   String _currentName = '';
@@ -73,10 +90,19 @@ class ConsoleProgressReporter implements ProgressReporter {
       return;
     }
 
+    final visible = switch (result) {
+      TestResultKind.failed => showFailed,
+      TestResultKind.errored => showErrored,
+      TestResultKind.skipped => showSkipped,
+      _ => false,
+    };
+
+    if (!visible) {
+      return;
+    }
+
     final filePart = fileRef != null ? '  $fileRef' : '';
-
     _sink.write('\r\x1b[K  $label ▶ $name$filePart\n');
-
     if (_currentName.isNotEmpty) {
       _render();
     }
