@@ -66,10 +66,12 @@ class WindowsInitializer {
       'REG_SZ',
       '/d',
       _displayName,
-      '/f'
+      '/f',
     ]);
     await Process.run(
-        'reg', ['add', key, '/v', 'IconUri', '/t', 'REG_SZ', '/d', ico, '/f']);
+      'reg',
+      ['add', key, '/v', 'IconUri', '/t', 'REG_SZ', '/d', ico, '/f'],
+    );
     await _createStartMenuShortcut(ico);
   }
 
