@@ -2,7 +2,13 @@ import 'package:taskflare/taskflare.dart';
 
 import '../entities/test_event.dart';
 
+/// Parses the raw stdout lines from a test process into a [RunSummary].
 class JsonEventParser {
+  /// Parses [lines] collected from the runner's stdout and the process [exitCode]
+  /// into a [RunSummary].
+  ///
+  /// Returns [TestOutcome.crash] when no events could be decoded or when no
+  /// [DoneEvent] was received, indicating the process exited unexpectedly.
   RunSummary parse(List<String> lines, int exitCode) {
     final events = _decodeEvents(lines);
 
@@ -47,7 +53,9 @@ class JsonEventParser {
     final events = <TestEvent>[];
     for (final line in lines) {
       final event = TestEvent.tryDecode(line);
-      if (event != null) events.add(event);
+      if (event != null) {
+        events.add(event);
+      }
     }
     return events;
   }
@@ -55,7 +63,9 @@ class JsonEventParser {
   Map<int, String> _buildNameMap(List<TestEvent> events) {
     final names = <int, String>{};
     for (final event in events) {
-      if (event is TestStartEvent) names[event.id] = event.name;
+      if (event is TestStartEvent) {
+        names[event.id] = event.name;
+      }
     }
     return names;
   }

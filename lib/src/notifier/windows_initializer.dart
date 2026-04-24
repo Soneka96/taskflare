@@ -12,49 +12,71 @@ import 'dart:typed_data';
 /// The bundled PNG (lib/assets/icon.png) is wrapped in an ICO container and
 /// written to %LOCALAPPDATA%\Taskflare\taskflare.ico on first run.
 class WindowsInitializer {
+  /// The Windows Application User Model ID used to identify toast notifications.
   static const appId = 'Taskflare.App';
+
   static const _displayName = 'Taskflare';
 
   static String get _base =>
       Platform.environment['LOCALAPPDATA'] ??
       '${Platform.environment['USERPROFILE']}\\AppData\\Local';
 
+  /// Absolute path to the ICO file written to `%LOCALAPPDATA%\Taskflare\taskflare.ico`.
   static String get iconPath => '$_base\\Taskflare\\taskflare.ico';
 
-  static String get _shortcutPath =>
-      '${Platform.environment['APPDATA']}'
+  static String get _shortcutPath => '${Platform.environment['APPDATA']}'
       '\\Microsoft\\Windows\\Start Menu\\Programs\\$_displayName.lnk';
 
-  /// Ensures the app is registered with icon. Silently no-ops on failure.
+  /// Ensures the app is registered with the correct icon. Silently no-ops on failure.
   static Future<void> ensureRegistered() async {
     try {
       final ico = iconPath;
       await _ensureIconExists(ico);
-      if (!await _isRegistered()) await _register(ico);
+      if (!await _isRegistered()) {
+        await _register(ico);
+      }
     } catch (_) {}
   }
 
-  /// True only if registry key exists, shortcut exists, and ICO file is present.
+  /// Returns `true` only if the registry key, Start Menu shortcut, and ICO file are all present.
   static Future<bool> _isRegistered() async {
     final reg = await Process.run('reg', [
       'query',
       'HKCU\\Software\\Classes\\AppUserModelId\\$appId',
     ]);
-    if (reg.exitCode != 0) return false;
-    if (!File(iconPath).existsSync()) return false;
+    if (reg.exitCode != 0) {
+      return false;
+    }
+    if (!File(iconPath).existsSync()) {
+      return false;
+    }
     return File(_shortcutPath).existsSync();
   }
 
+  /// Writes the registry keys and creates the Start Menu shortcut for [ico].
   static Future<void> _register(String ico) async {
     final key = 'HKCU\\Software\\Classes\\AppUserModelId\\$appId';
     await Process.run('reg', ['add', key, '/f']);
-    await Process.run('reg', ['add', key, '/v', 'DisplayName', '/t', 'REG_SZ', '/d', _displayName, '/f']);
-    await Process.run('reg', ['add', key, '/v', 'IconUri', '/t', 'REG_SZ', '/d', ico, '/f']);
+    await Process.run('reg', [
+      'add',
+      key,
+      '/v',
+      'DisplayName',
+      '/t',
+      'REG_SZ',
+      '/d',
+      _displayName,
+      '/f'
+    ]);
+    await Process.run(
+        'reg', ['add', key, '/v', 'IconUri', '/t', 'REG_SZ', '/d', ico, '/f']);
     await _createStartMenuShortcut(ico);
   }
 
-  // Creates a Start Menu shortcut with the AppUserModelID property set.
-  // This is what Windows actually uses to resolve the notification header icon.
+  /// Creates a Start Menu shortcut with the AppUserModelID property set.
+  ///
+  /// Windows uses this shortcut — not the registry key alone — to resolve
+  /// the notification header icon.
   static Future<void> _createStartMenuShortcut(String ico) async {
     final dartExe = Platform.resolvedExecutable;
     final lnk = _shortcutPath.replaceAll('\\', '\\\\');
@@ -136,44 +158,56 @@ public class Shortcut {
     await Process.run('powershell', ['-NoProfile', '-Command', script]);
   }
 
+  /// Writes the ICO file to [path] if it does not already exist.
   static Future<void> _ensureIconExists(String path) async {
     final file = File(path);
-    if (file.existsSync()) return;
+    if (file.existsSync()) {
+      return;
+    }
     await file.parent.create(recursive: true);
     final png = await _readBundledIcon();
-    if (png != null) await file.writeAsBytes(_pngToIco(png));
+    if (png != null) {
+      await file.writeAsBytes(_pngToIco(png));
+    }
   }
 
-  // Wraps a PNG in a Vista+ ICO container (Windows supports PNG-inside-ICO).
+  /// Wraps a PNG in a Vista+ ICO container (Windows supports PNG-inside-ICO).
   static Uint8List _pngToIco(Uint8List png) {
     final buf = BytesBuilder();
     void u16(int v) => buf.add([v & 0xFF, (v >> 8) & 0xFF]);
-    void u32(int v) =>
-        buf.add([v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF]);
+    void u32(int v) => buf
+        .add([v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF]);
 
-    u16(0); u16(1); u16(1); // ICONDIR: reserved, type=ICO, count=1
+    u16(0);
+    u16(1);
+    u16(1); // ICONDIR: reserved, type=ICO, count=1
 
     // ICONDIRENTRY
-    buf.addByte(0);        // width:  0 = 256
-    buf.addByte(0);        // height: 0 = 256
-    buf.addByte(0);        // color count
-    buf.addByte(0);        // reserved
-    u16(1);                // planes
-    u16(32);               // bit count
-    u32(png.length);       // size of image data
-    u32(22);               // offset = 6 (ICONDIR) + 16 (ICONDIRENTRY)
+    buf.addByte(0); // width:  0 = 256
+    buf.addByte(0); // height: 0 = 256
+    buf.addByte(0); // color count
+    buf.addByte(0); // reserved
+    u16(1); // planes
+    u16(32); // bit count
+    u32(png.length); // size of image data
+    u32(22); // offset = 6 (ICONDIR) + 16 (ICONDIRENTRY)
 
     buf.add(png);
     return buf.takeBytes();
   }
 
+  /// Reads the bundled `lib/assets/icon.png` from the package, or returns `null` if unavailable.
   static Future<Uint8List?> _readBundledIcon() async {
     final uri = await Isolate.resolvePackageUri(
       Uri.parse('package:taskflare/assets/icon.png'),
     );
-    if (uri == null) return null;
+    if (uri == null) {
+      return null;
+    }
     final file = File.fromUri(uri);
-    if (!file.existsSync()) return null;
+    if (!file.existsSync()) {
+      return null;
+    }
     return file.readAsBytes();
   }
 }

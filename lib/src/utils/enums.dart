@@ -1,29 +1,29 @@
-/// Result of a single test.
+/// Result of a single test, determined from a `testDone` event.
 enum TestResultKind {
-  // not yet determined (default)
+  /// Not yet determined (default state before the test finishes).
   none,
 
-  // result: 'success', not skipped
+  /// The test passed (`result: 'success'`, not skipped).
   passed,
 
-  // result: 'failure' — assertion error
+  /// The test failed due to an assertion error (`result: 'failure'`).
   failed,
 
-  // result: 'error' — uncaught exception
+  /// The test failed due to an uncaught exception (`result: 'error'`).
   errored,
 
-  // skipped: true
+  /// The test was explicitly skipped.
   skipped,
 }
 
 /// Overall verdict of a test run.
 enum TestOutcome {
-  // all tests passed (exit code 0)
+  /// All tests passed.
   success,
 
-  // one or more tests failed
+  /// One or more tests failed or errored.
   failure,
 
-  // process exited before a valid done event
+  /// The process exited before a `done` event was received.
   crash,
 }

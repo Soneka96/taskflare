@@ -1,5 +1,6 @@
 import 'process_test_runner.dart';
 
+/// A [ProcessTestRunner] that runs `dart test --reporter=json`.
 class DartTestRunner extends ProcessTestRunner {
   const DartTestRunner({
     super.arguments,

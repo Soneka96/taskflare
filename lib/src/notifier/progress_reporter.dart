@@ -2,9 +2,18 @@ import 'dart:io';
 
 import '../utils/enums.dart';
 
+/// Contract for components that display live test progress during a run.
 abstract class ProgressReporter {
+  /// Called when a test begins.
+  ///
+  /// [name] is the display name and [elapsed] is the time since the run started.
   void onTestStart(String name, Duration elapsed);
 
+  /// Called when a test finishes.
+  ///
+  /// [name] is the display name, [fileRef] is the `file:line` reference (if
+  /// available), [result] is the [TestResultKind], and the totals reflect
+  /// all tests completed so far.
   void onTestDone({
     required String name,
     String? fileRef,
@@ -14,10 +23,16 @@ abstract class ProgressReporter {
     required int totalSkipped,
   });
 
+  /// Called once after all tests finish. Used to clear the live status line.
   void done();
 }
 
+/// A [ProgressReporter] that renders a live status line in the terminal and
+/// prints a permanent line for each failed or errored test.
 class ConsoleProgressReporter implements ProgressReporter {
+  /// Creates a [ConsoleProgressReporter].
+  ///
+  /// [sink] defaults to [stdout] when omitted.
   ConsoleProgressReporter({StringSink? sink}) : _sink = sink ?? stdout;
 
   final StringSink _sink;
@@ -59,7 +74,9 @@ class ConsoleProgressReporter implements ProgressReporter {
     }
 
     final filePart = fileRef != null ? '  $fileRef' : '';
+
     _sink.write('\r\x1b[K  $label ▶ $name$filePart\n');
+
     if (_currentName.isNotEmpty) {
       _render();
     }
@@ -75,7 +92,9 @@ class ConsoleProgressReporter implements ProgressReporter {
     var line =
         '  (${seconds}s)  passed: $_passed  failed: $_failed  skipped: $_skipped  ▶ $_currentName';
     final width = _width;
-    if (line.length > width) line = line.substring(0, width);
+    if (line.length > width) {
+      line = line.substring(0, width);
+    }
     _sink.write('\r\x1b[K$line');
   }
 

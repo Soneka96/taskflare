@@ -2,7 +2,11 @@ import 'package:taskflare/taskflare.dart';
 
 import 'notifier.dart';
 
+/// A [Notifier] that prints the run outcome to stdout.
 class ConsoleNotifier implements Notifier {
+  /// Creates a [ConsoleNotifier].
+  ///
+  /// [printer] defaults to [print] when omitted, and can be overridden for testing.
   const ConsoleNotifier({void Function(String)? printer})
       : _printer = printer ?? print;
 
