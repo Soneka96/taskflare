@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'entities/test_event.dart';
 import 'notifier/notifier.dart';
 import 'notifier/progress_reporter.dart';
 import 'parser/json_event_parser.dart';
+import 'reporter/report_writer.dart';
+import 'reporter/test_record.dart';
 import 'runner/command_runner.dart';
 import 'runner/run_state.dart';
 import 'utils/enums.dart';
@@ -16,6 +20,8 @@ class Taskflare {
     required this.parser,
     required this.notifier,
     this.progressReporter,
+    this.reportWriter,
+    this.command,
     this.onTestFailed,
   });
 
@@ -31,6 +37,13 @@ class Taskflare {
   /// Displays live test progress in the terminal. Optional — omit to suppress output.
   final ProgressReporter? progressReporter;
 
+  /// Writes a persistent markdown report after the run. Optional — omit to skip.
+  final ReportWriter? reportWriter;
+
+  /// The command string shown in the report header (e.g. `'dart test'`).
+  /// Defaults to `'dart test'` when omitted.
+  final String? command;
+
   /// Called immediately when a test fails, before the run completes.
   ///
   /// Receives the stripped test name (no group prefix, no file paths).
@@ -43,6 +56,7 @@ class Taskflare {
     final process = await runner.start();
     final state = RunState();
     final startTime = DateTime.now();
+    final directory = Directory.current.path;
 
     await Future.wait([
       process.stdout.forEach((line) {
@@ -69,7 +83,20 @@ class Taskflare {
             if (e.hidden) {
               return;
             }
+            final elapsed = state.testElapsed(e.testId);
             final resultKind = state.recordTestDone(e);
+
+            if (reportWriter != null) {
+              reportWriter!.recordTest(
+                TestRecord(
+                  leafName: state.leafName(e.testId),
+                  groupName: state.outerGroupName(e.testId),
+                  result: resultKind,
+                  fileRef: state.fileRef(e.testId),
+                  duration: elapsed,
+                ),
+              );
+            }
 
             if ((resultKind == TestResultKind.failed ||
                     resultKind == TestResultKind.errored) &&
@@ -107,6 +134,15 @@ class Taskflare {
 
     if (summary.outcome == TestOutcome.crash && state.stderrLines.isNotEmpty) {
       summary = summary.copyWith(crashOutput: state.stderrLines.join('\n'));
+    }
+
+    if (reportWriter != null) {
+      await reportWriter!.finish(
+        summary: summary,
+        command: command ?? 'dart test',
+        directory: directory,
+        startedAt: startTime,
+      );
     }
 
     await notifier.notify(summary);
