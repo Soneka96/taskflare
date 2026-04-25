@@ -101,11 +101,9 @@ class TaskflareConfig {
     if (Platform.isWindows) {
       final base = Platform.environment['APPDATA'] ??
           '${Platform.environment['USERPROFILE']}\\AppData\\Roaming';
-
       return File('$base\\Taskflare\\config.json');
     }
     final home = Platform.environment['HOME'] ?? '';
-
     return File('$home/.config/taskflare/config.json');
   }
 }
