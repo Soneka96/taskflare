@@ -1,13 +1,13 @@
-import 'dart:io';
-
 import 'package:taskflare/src/cli/config_command.dart';
+import 'package:taskflare/src/cli/help_command.dart';
+import 'package:taskflare/src/cli/menu_command.dart';
+import 'package:taskflare/src/cli/terminal.dart';
 import 'package:taskflare/src/cli/test_command.dart';
 import 'package:taskflare/src/config/taskflare_config.dart';
 
 Future<void> main(List<String> args) async {
   if (args.isEmpty) {
-    final config = await TaskflareConfig.load();
-    await runTestCommand(const [], config);
+    await runMenuCommand();
     return;
   }
 
@@ -16,26 +16,17 @@ Future<void> main(List<String> args) async {
       final config = await TaskflareConfig.load();
       await runTestCommand(args.skip(1).toList(), config);
     case 'config':
-      await runConfigCommand();
+      final term = TerminalSession();
+      await term.run(() => runConfigCommand(term));
     case 'help':
-      _printHelp();
+      if (args.length > 1) {
+        printCommandHelp(args[1]);
+      } else {
+        final term = TerminalSession();
+        await term.run(() => runHelpCommand(term));
+      }
     default:
-      // Pass unknown args straight through as test arguments (backwards compat).
       final config = await TaskflareConfig.load();
       await runTestCommand(args, config);
   }
-}
-
-void _printHelp() {
-  stdout.writeln('');
-  stdout.writeln('Taskflare — test runner wrapper with live progress and notifications');
-  stdout.writeln('');
-  stdout.writeln('Usage:');
-  stdout.writeln('  taskflare                Run tests (auto-detects dart/flutter)');
-  stdout.writeln('  taskflare test [args]    Run tests, passing [args] to the test runner');
-  stdout.writeln('  taskflare config         Interactive configuration menu');
-  stdout.writeln('  taskflare help           Show this help');
-  stdout.writeln('');
-  stdout.writeln('Report files are written to taskflare-reports/ in the current directory.');
-  stdout.writeln('');
 }

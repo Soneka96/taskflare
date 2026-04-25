@@ -24,9 +24,32 @@ class TestProfile extends CommandProfile {
   String get description => 'Run dart test or flutter test (auto-detected)';
 
   @override
-  String get commandLabel {
-    return 'taskflare test';
-  }
+  String get commandLabel => 'taskflare test';
+
+  @override
+  String get helpText => '''
+  Runs your test suite using `dart test` or `flutter test`,
+  auto-detected from the presence of a Flutter SDK dependency
+  in pubspec.yaml.
+
+  Usage:
+    taskflare test                Run all tests
+    taskflare test --name "foo"   Run tests matching a name
+    taskflare test test/parser/   Run tests in a specific folder
+
+  Output lines (permanent, stay visible after the run):
+    FAIL  — assertion error (expect failed)
+    THROW — uncaught exception
+    SKIP  — test was skipped
+
+  File references are printed as path/to/file.dart:line.
+  Ctrl+click in most terminals and IDEs to jump directly to the test.
+
+  Outcomes:
+    [SUCCESS] — all tests passed
+    [FAILURE] — at least one test failed or errored
+    [CRASH]   — process exited before completing''';
+
 
   /// Returns a [DartTestRunner] or [FlutterTestRunner] based on whether
   /// [workingDirectory] contains a Flutter project.
