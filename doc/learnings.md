@@ -82,6 +82,25 @@ This works for `dart run`, `dart pub global activate`, and `dart pub global run`
 
 ---
 
+## Automated pub.dev publishing via GitHub Actions
+
+**Goal:** Merge a PR into `main` → package automatically published to pub.dev.
+
+**Architecture:** Two workflows are required because pub.dev's OIDC check requires the workflow to be triggered by a tag push (not a branch push). A single workflow on push-to-main cannot satisfy this.
+
+1. **auto-tag.yml** — triggers on push to `main`, reads `version:` from `pubspec.yaml`, creates and pushes `v{version}` tag if it doesn't already exist.
+2. **publish.yml** — triggers on tag push matching `v*`, runs `dart pub publish --dry-run` then `dart pub publish -f` using OIDC (`id-token: write` permission).
+
+**Why a PAT is required for auto-tag:** GitHub blocks `GITHUB_TOKEN` pushes from triggering other workflow runs (security policy). A classic Personal Access Token with `repo` scope must be stored as `GH_PAT` secret and passed to `actions/checkout` so the tag push triggers `publish.yml`.
+
+**pub.dev configuration (one-time):** Enable automated publishing at pub.dev → package Admin tab. Set tag pattern to `v{{version}}`, check "Enable publishing from push events", check "Require GitHub Actions environment", set environment name to `pub.dev`.
+
+**GitHub environment protection rules gotcha:** The environment must allow **both** branch `main` (for auto-tag.yml) and tag pattern `v*` (for publish.yml). Without the `v*` tag rule, publish.yml fails with "Tag is not allowed to deploy to pub.dev due to environment protection rules" even though the tag was created from main.
+
+**YAML gotcha:** `run: echo "..." | sed 's/version: *//'` fails YAML parsing because `version: ` (colon followed by space) inside an unquoted scalar is treated as a nested mapping key. Always use `run: |` block scalar for commands containing colon-space sequences.
+
+---
+
 ## _isRegistered must check all components to avoid silent skips
 
 **Problem:** The initial `_isRegistered` check only verified the registry key. If the icon file or Start Menu shortcut was missing (e.g. after a manual deletion or a first run without the icon), the check returned `true` and re-registration was skipped, leaving the notification broken.
