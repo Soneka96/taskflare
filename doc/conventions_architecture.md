@@ -7,8 +7,9 @@ lib/src/
 ├── cli/                # Entry-point commands: menu, help, run, config
 │   ├── profile/        # CommandProfile abstractions and concrete impls (TestProfile, …)
 │   ├── command_registry.dart   # Central list of all runnable commands
+│   ├── terminal.dart           # TerminalSession — alt buffer lifecycle, injected into all TUI screens
 │   ├── menu_command.dart       # Main interactive menu (bare `taskflare`)
-│   ├── help_command.dart       # Help screen and per-command help
+│   ├── help_command.dart       # Interactive help index + non-interactive per-command help
 │   ├── run_command.dart        # "Run command" submenu
 │   ├── config_command.dart     # Config menu
 │   └── test_command.dart       # Wires Taskflare for the `test` command

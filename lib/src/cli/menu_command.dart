@@ -1,41 +1,39 @@
-import 'dart:io';
-
 import '../config/taskflare_config.dart';
 import 'config_command.dart';
 import 'help_command.dart';
 import 'run_command.dart';
 import 'terminal.dart';
 
-/// Displays the main interactive menu shown when `taskflare` is run with no arguments.
+/// Entry point for the bare `taskflare` command.
+///
+/// Creates a [TerminalSession], enters the alt buffer, and loops the main menu
+/// until the user quits or launches a command.
 Future<void> runMenuCommand() async {
-  TerminalScreen? prev;
+  final term = TerminalSession();
+  await term.run(() => _menuLoop(term));
+}
+
+Future<void> _menuLoop(TerminalSession term) async {
   while (true) {
-    prev?.clear();
-    final screen = TerminalScreen();
-    _printMenu(screen);
-    final input = stdin.readLineSync()?.trim().toLowerCase();
+    term.clear();
+    _printMenu(term);
+    final input = term.readLine()?.trim().toLowerCase();
     switch (input) {
       case '1':
-        await runHelpCommand();
-        prev = screen;
+        await runHelpCommand(term);
       case '2':
-        await runConfigCommand();
-        prev = screen;
+        await runConfigCommand(term);
       case '3':
         final config = await TaskflareConfig.load();
-        await runRunCommand(config);
-        prev = screen;
+        final ran = await runRunCommand(config, term);
+        if (ran) return;
       case 'q':
-        screen.clear();
         return;
-      default:
-        screen.writeln('  Enter 1, 2, 3, or q.');
-        prev = screen;
     }
   }
 }
 
-void _printMenu(TerminalScreen s) {
+void _printMenu(TerminalSession s) {
   s.writeln();
   s.writeln(r'  ████████╗ █████╗ ███████╗██╗  ██╗███████╗██╗      █████╗ ██████╗ ███████╗');
   s.writeln(r'     ██╔══╝██╔══██╗██╔════╝██║ ██╔╝██╔════╝██║     ██╔══██╗██╔══██╗██╔════╝');

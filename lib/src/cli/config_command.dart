@@ -1,38 +1,29 @@
-import 'dart:io';
-
 import '../config/taskflare_config.dart';
 import 'terminal.dart';
 
-/// Runs the interactive configuration menu, saving changes on exit.
-Future<void> runConfigCommand() async {
+/// Interactive configuration menu.
+///
+/// Loads the current config, lets the user toggle filter and report settings,
+/// and saves on quit. Uses [term] for all screen I/O.
+Future<void> runConfigCommand(TerminalSession term) async {
   var config = await TaskflareConfig.load();
-
-  TerminalScreen? prev;
   while (true) {
-    prev?.clear();
-    final screen = TerminalScreen();
-    _printMainMenu(config, screen);
-    final input = stdin.readLineSync()?.trim().toLowerCase();
+    term.clear();
+    _printMainMenu(config, term);
+    final input = term.readLine()?.trim().toLowerCase();
     switch (input) {
       case '1':
-        config = _filterMenu(config);
-        prev = screen;
+        config = _filterMenu(config, term);
       case '2':
-        config = _reportMenu(config);
-        prev = screen;
+        config = _reportMenu(config, term);
       case 'q':
-        screen.clear();
         await config.save();
-        stdout.writeln('Configuration saved.');
         return;
-      default:
-        screen.writeln('  Unknown option. Enter 1, 2, or q.');
-        prev = screen;
     }
   }
 }
 
-void _printMainMenu(TaskflareConfig config, TerminalScreen s) {
+void _printMainMenu(TaskflareConfig config, TerminalSession s) {
   s.writeln();
   s.writeln('  Taskflare configuration');
   s.writeln();
@@ -43,34 +34,25 @@ void _printMainMenu(TaskflareConfig config, TerminalScreen s) {
   s.write('Choose: ');
 }
 
-TaskflareConfig _filterMenu(TaskflareConfig config) {
-  TerminalScreen? prev;
+TaskflareConfig _filterMenu(TaskflareConfig config, TerminalSession term) {
   while (true) {
-    prev?.clear();
-    final screen = TerminalScreen();
-    _printFilterMenu(config, screen);
-    final input = stdin.readLineSync()?.trim().toLowerCase();
+    term.clear();
+    _printFilterMenu(config, term);
+    final input = term.readLine()?.trim().toLowerCase();
     switch (input) {
       case '1':
         config = config.copyWith(showFailed: !config.showFailed);
-        prev = screen;
       case '2':
         config = config.copyWith(showErrored: !config.showErrored);
-        prev = screen;
       case '3':
         config = config.copyWith(showSkipped: !config.showSkipped);
-        prev = screen;
       case 'b':
-        screen.clear();
         return config;
-      default:
-        screen.writeln('  Unknown option. Enter 1, 2, 3, or b.');
-        prev = screen;
     }
   }
 }
 
-void _printFilterMenu(TaskflareConfig config, TerminalScreen s) {
+void _printFilterMenu(TaskflareConfig config, TerminalSession s) {
   s.writeln();
   s.writeln('  Filter — what to print as a permanent line in the terminal?');
   s.writeln();
@@ -82,28 +64,21 @@ void _printFilterMenu(TaskflareConfig config, TerminalScreen s) {
   s.write('Choose number to toggle: ');
 }
 
-TaskflareConfig _reportMenu(TaskflareConfig config) {
-  TerminalScreen? prev;
+TaskflareConfig _reportMenu(TaskflareConfig config, TerminalSession term) {
   while (true) {
-    prev?.clear();
-    final screen = TerminalScreen();
-    _printReportMenu(config, screen);
-    final input = stdin.readLineSync()?.trim().toLowerCase();
+    term.clear();
+    _printReportMenu(config, term);
+    final input = term.readLine()?.trim().toLowerCase();
     switch (input) {
       case '1':
         config = config.copyWith(reportEnabled: !config.reportEnabled);
-        prev = screen;
       case 'b':
-        screen.clear();
         return config;
-      default:
-        screen.writeln('  Unknown option. Enter 1 or b.');
-        prev = screen;
     }
   }
 }
 
-void _printReportMenu(TaskflareConfig config, TerminalScreen s) {
+void _printReportMenu(TaskflareConfig config, TerminalSession s) {
   s.writeln();
   s.writeln('  Report file — written to taskflare-reports/ after each run.');
   s.writeln();

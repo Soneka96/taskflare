@@ -3,46 +3,32 @@ import 'dart:io';
 import 'command_registry.dart';
 import 'terminal.dart';
 
-/// Runs the help screen.
+/// Interactive help index.
 ///
-/// When [commandName] is provided, prints that command's help directly
-/// (non-interactive, suitable for `taskflare help test`).
-/// Without it, opens an interactive list of commands.
-Future<void> runHelpCommand({String? commandName}) async {
-  if (commandName != null) {
-    _printCommandHelp(commandName);
-    return;
-  }
-
-  TerminalScreen? prev;
+/// Loops until the user presses `b`. Uses [term] for all screen I/O so the
+/// display stays inside the caller's alt buffer.
+Future<void> runHelpCommand(TerminalSession term) async {
+  final registry = commandRegistry;
   while (true) {
-    prev?.clear();
-    final registry = commandRegistry;
-    final screen = TerminalScreen();
-    _printHelpIndex(registry, screen);
-    final input = stdin.readLineSync()?.trim().toLowerCase();
-    if (input == 'b') {
-      screen.clear();
-      return;
-    }
+    term.clear();
+    _printHelpIndex(registry, term);
+    final input = term.readLine()?.trim().toLowerCase();
+    if (input == 'b') return;
     final index = int.tryParse(input ?? '');
     if (index != null && index >= 1 && index <= registry.length) {
-      screen.clear();
-      final detail = TerminalScreen();
-      _printCommandHelpByEntry(registry[index - 1], detail);
-      detail.writeln();
-      detail.write('  Press Enter to go back...');
-      stdin.readLineSync();
-      detail.clear();
-      prev = null;
-    } else {
-      screen.writeln('  Enter a number or b to go back.');
-      prev = screen;
+      term.clear();
+      _printCommandHelpByEntry(registry[index - 1], term);
+      term.writeln();
+      term.write('  Press Enter to go back...');
+      term.readLine();
     }
   }
 }
 
-void _printCommandHelp(String name) {
+/// Prints help for [name] directly to stdout without entering the alt buffer.
+///
+/// Used by `taskflare help <command>` from the CLI.
+void printCommandHelp(String name) {
   final registry = commandRegistry;
   final entry = registry.where((e) => e.profile.name == name).firstOrNull;
   if (entry == null) {
@@ -54,11 +40,17 @@ void _printCommandHelp(String name) {
     stdout.writeln();
     return;
   }
-  final s = TerminalScreen();
-  _printCommandHelpByEntry(entry, s);
+  final buf = StringBuffer();
+  buf.writeln();
+  buf.writeln('  ${entry.profile.name} — ${entry.profile.description}');
+  buf.writeln();
+  for (final line in entry.profile.helpText.split('\n')) {
+    buf.writeln(line);
+  }
+  stdout.write(buf);
 }
 
-void _printCommandHelpByEntry(CliCommandEntry entry, TerminalScreen s) {
+void _printCommandHelpByEntry(CliCommandEntry entry, TerminalSession s) {
   s.writeln();
   s.writeln('  ${entry.profile.name} — ${entry.profile.description}');
   s.writeln();
@@ -67,7 +59,7 @@ void _printCommandHelpByEntry(CliCommandEntry entry, TerminalScreen s) {
   }
 }
 
-void _printHelpIndex(List<CliCommandEntry> registry, TerminalScreen s) {
+void _printHelpIndex(List<CliCommandEntry> registry, TerminalSession s) {
   s.writeln();
   s.writeln('  Help — available commands');
   s.writeln();

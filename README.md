@@ -102,7 +102,7 @@ lib/src/
 │   ├── run_command.dart       "Run command" submenu
 │   ├── config_command.dart    Interactive configuration menu
 │   ├── test_command.dart      Wires Taskflare for the `test` command
-│   └── terminal.dart          Line-aware stdout wrapper for in-place menu redraws
+│   └── terminal.dart          TerminalSession — owns the alt screen buffer, injected into all TUI screens
 ├── config/
 │   └── taskflare_config.dart  Persisted user preferences (filter + report toggles)
 ├── utils/                  Shared utilities

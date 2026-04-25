@@ -1,35 +1,33 @@
-import 'dart:io';
-
 import '../config/taskflare_config.dart';
 import 'command_registry.dart';
 import 'terminal.dart';
 
-/// Opens the interactive "Run command" submenu and executes the chosen command.
-Future<void> runRunCommand(TaskflareConfig config) async {
-  TerminalScreen? prev;
+/// Shows the run-command submenu and executes the chosen command.
+///
+/// Returns `true` when a command was executed — the caller should then exit
+/// the menu loop, as the alt buffer has already been left via [TerminalSession.exitAlt].
+/// Returns `false` when the user presses back.
+///
+/// [config] is forwarded to the selected command's run function.
+/// [term] is used for screen I/O and is exited before the command runs so
+/// its output lands in the normal terminal scrollback.
+Future<bool> runRunCommand(TaskflareConfig config, TerminalSession term) async {
+  final registry = commandRegistry;
   while (true) {
-    prev?.clear();
-    final registry = commandRegistry;
-    final screen = TerminalScreen();
-    _printRunMenu(registry, screen);
-    final input = stdin.readLineSync()?.trim().toLowerCase();
-    if (input == 'b') {
-      screen.clear();
-      return;
-    }
+    term.clear();
+    _printRunMenu(registry, term);
+    final input = term.readLine()?.trim().toLowerCase();
+    if (input == 'b') return false;
     final index = int.tryParse(input ?? '');
     if (index != null && index >= 1 && index <= registry.length) {
-      screen.clear();
+      term.exitAlt();
       await registry[index - 1].run([], config);
-      return;
-    } else {
-      screen.writeln('  Enter a number or b to go back.');
-      prev = screen;
+      return true;
     }
   }
 }
 
-void _printRunMenu(List<CliCommandEntry> registry, TerminalScreen s) {
+void _printRunMenu(List<CliCommandEntry> registry, TerminalSession s) {
   s.writeln();
   s.writeln('  Run command');
   s.writeln();
