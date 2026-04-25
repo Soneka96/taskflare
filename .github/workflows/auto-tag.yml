@@ -16,7 +16,8 @@ jobs:
 
       - name: Read version from pubspec.yaml
         id: version
-        run: echo "VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: *//')" >> $GITHUB_OUTPUT
+        run: |
+          echo "VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: *//')" >> $GITHUB_OUTPUT
 
       - name: Skip if tag already exists
         id: tag_check
