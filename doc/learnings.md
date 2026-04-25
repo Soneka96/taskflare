@@ -4,6 +4,16 @@ Problems encountered during development and what we learned from them.
 
 ---
 
+## Relative-cursor clearing breaks when content overflows the viewport
+
+**Problem:** The original `TerminalScreen` cleared its output by moving the cursor up N lines (`\x1B[NA`) then erasing to end of screen (`\x1B[0J`). This worked as long as all previously printed content was still visible. When a screen (e.g. the test-command detail page) was tall enough to cause the terminal to scroll, earlier content (e.g. the main menu logo) moved into the scrollback buffer above row 1. The ANSI cursor-up sequence clamps at the top of the visible viewport and cannot enter scrollback, so the erase landed in the wrong place and the old content was never cleared.
+
+**Fix:** All interactive TUI flows now run inside the terminal's **alternate screen buffer** (`\x1B[?1049h` to enter, `\x1B[?1049l` to exit). The alt buffer has no scrollback — it is a fixed-size viewport — so `\x1B[H\x1B[2J` (home + erase display) reliably clears everything on each redraw regardless of how much was printed before. On exit, the original terminal contents are restored exactly as they were.
+
+**Implementation:** `TerminalSession` in `lib/src/cli/terminal.dart` owns the alt buffer lifecycle. One instance is created at the top-level entry point and injected into every sub-screen. A SIGINT handler inside `TerminalSession.run()` ensures the buffer is exited even on Ctrl-C.
+
+---
+
 ## Windows toast notification icon doesn't appear from registry alone
 
 **Problem:** Setting `IconUri` under `HKCU\Software\Classes\AppUserModelId\{AppId}` is documented as the way to register an unpackaged app for WinRT toast notifications. In practice, Windows uses the registry to resolve the display name and to allow `ToastNotificationManager::CreateToastNotifier` to succeed, but the **notification header icon** (the small square to the left of the app name) comes from the **Start Menu shortcut**, not from `IconUri`.

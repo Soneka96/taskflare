@@ -1,34 +1,15 @@
-import 'dart:convert';
-import 'dart:io';
+import 'process_test_runner.dart';
 
-import 'command_runner.dart';
-
-class FlutterTestRunner extends CommandRunner {
+/// A [ProcessTestRunner] that runs `flutter test --machine`.
+class FlutterTestRunner extends ProcessTestRunner {
   const FlutterTestRunner({
-    this.arguments = const [],
-    this.workingDirectory,
+    super.arguments,
+    super.workingDirectory,
   });
 
-  final List<String> arguments;
-  final String? workingDirectory;
+  @override
+  String get executable => 'flutter';
 
   @override
-  Future<CommandProcess> start() async {
-    final process = await Process.start(
-      'flutter',
-      ['test', '--machine', ...arguments],
-      workingDirectory: workingDirectory,
-      runInShell: true,
-    );
-
-    return CommandProcess(
-      stdout: process.stdout
-          .transform(const SystemEncoding().decoder)
-          .transform(const LineSplitter()),
-      stderr: process.stderr
-          .transform(const SystemEncoding().decoder)
-          .transform(const LineSplitter()),
-      exitCode: process.exitCode,
-    );
-  }
+  List<String> get baseArgs => ['test', '--machine'];
 }

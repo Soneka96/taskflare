@@ -4,6 +4,15 @@
 
 ```text
 lib/src/
+├── cli/                # Entry-point commands: menu, help, run, config
+│   ├── profile/        # CommandProfile abstractions and concrete impls (TestProfile, …)
+│   ├── command_registry.dart   # Central list of all runnable commands
+│   ├── terminal.dart           # TerminalSession — alt buffer lifecycle, injected into all TUI screens
+│   ├── menu_command.dart       # Main interactive menu (bare `taskflare`)
+│   ├── help_command.dart       # Interactive help index + non-interactive per-command help
+│   ├── run_command.dart        # "Run command" submenu
+│   ├── config_command.dart     # Config menu
+│   └── test_command.dart       # Wires Taskflare for the `test` command
 ├── entities/     # Pure data classes — no I/O, no business logic
 ├── utils/        # Shared utilities: enums, constants, helpers
 ├── parser/       # Transforms raw output into domain types
@@ -14,14 +23,17 @@ lib/src/
 
 ## Layer Rules
 
-| Layer        | Allowed dependencies | Forbidden                        |
-| ------------ | -------------------- | -------------------------------- |
-| `entities`   | `utils`              | everything else                  |
-| `utils`      | nothing              | everything                       |
-| `parser`     | `entities`, `utils`  | `runner`, `notifier`             |
-| `runner`     | `utils`              | `parser`, `notifier`, `entities` |
-| `notifier`   | `entities`, `utils`  | `runner`, `parser`               |
-| orchestrator | all layers           | —                                |
+| Layer        | Allowed dependencies                                     | Forbidden                        |
+| ------------ | -------------------------------------------------------- | -------------------------------- |
+| `utils`      | nothing                                                  | everything                       |
+| `entities`   | `utils`                                                  | everything else                  |
+| `config`     | nothing (pure preferences)                               | everything                       |
+| `parser`     | `entities`, `utils`                                      | `runner`, `notifier`, `cli`      |
+| `runner`     | `utils`                                                  | `parser`, `notifier`, `entities` |
+| `reporter`   | `entities`, `utils`                                      | `runner`, `parser`, `notifier`   |
+| `notifier`   | `entities`, `utils`                                      | `runner`, `parser`, `cli`        |
+| orchestrator | `runner`, `parser`, `notifier`, `reporter`, `entities`   | `cli`                            |
+| `cli`        | all layers (entry-point wiring only)                     | —                                |
 
 ## Naming
 
@@ -43,6 +55,15 @@ lib/src/
 - Provide `copyWith` when the entity has more than one field
 - Override `==` and `hashCode` (or use `package:equatable` if added)
 - No methods that perform I/O or computation beyond value transformation
+
+## Adding a New Command
+
+1. Create `lib/src/cli/profile/{name}_profile.dart` extending `CommandProfile`
+   — implement `name`, `description`, `helpText`, `commandLabel`, and `buildRunner`
+2. Add an entry to `commandRegistry` in `lib/src/cli/command_registry.dart`
+   — the menu, help screen, and run submenu all derive from this list automatically
+3. If the command needs its own wiring (e.g. custom notifier or config), create
+   `lib/src/cli/{name}_command.dart` and reference it from the registry entry
 
 ## Adding a New Runner
 

@@ -1,34 +1,15 @@
-import 'dart:convert';
-import 'dart:io';
+import 'process_test_runner.dart';
 
-import 'command_runner.dart';
-
-class DartTestRunner extends CommandRunner {
+/// A [ProcessTestRunner] that runs `dart test --reporter=json`.
+class DartTestRunner extends ProcessTestRunner {
   const DartTestRunner({
-    this.arguments = const [],
-    this.workingDirectory,
+    super.arguments,
+    super.workingDirectory,
   });
 
-  final List<String> arguments;
-  final String? workingDirectory;
+  @override
+  String get executable => 'dart';
 
   @override
-  Future<CommandProcess> start() async {
-    final process = await Process.start(
-      'dart',
-      ['test', '--reporter=json', ...arguments],
-      workingDirectory: workingDirectory,
-      runInShell: true,
-    );
-
-    return CommandProcess(
-      stdout: process.stdout
-          .transform(const SystemEncoding().decoder)
-          .transform(const LineSplitter()),
-      stderr: process.stderr
-          .transform(const SystemEncoding().decoder)
-          .transform(const LineSplitter()),
-      exitCode: process.exitCode,
-    );
-  }
+  List<String> get baseArgs => ['test', '--reporter=json'];
 }

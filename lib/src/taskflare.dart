@@ -1,213 +1,150 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:path/path.dart' as p;
-
+import 'entities/test_event.dart';
 import 'notifier/notifier.dart';
 import 'notifier/progress_reporter.dart';
 import 'parser/json_event_parser.dart';
+import 'reporter/report_writer.dart';
+import 'reporter/test_record.dart';
 import 'runner/command_runner.dart';
+import 'runner/run_state.dart';
 import 'utils/enums.dart';
 
+/// Orchestrates a complete test run: starts the process via [CommandRunner],
+/// parses JSON events, reports live progress via [ProgressReporter],
+/// fires per-test notifications, and delivers the final [RunSummary] to [Notifier].
 class Taskflare {
+  /// Creates a [Taskflare].
   Taskflare({
     required this.runner,
     required this.parser,
     required this.notifier,
     this.progressReporter,
+    this.reportWriter,
+    this.command,
     this.onTestFailed,
   });
 
+  /// Starts the test process and provides its stdout and stderr streams.
   final CommandRunner runner;
+
+  /// Parses the raw stdout lines into a [RunSummary].
   final JsonEventParser parser;
+
+  /// Receives the final [RunSummary] when the run completes.
   final Notifier notifier;
+
+  /// Displays live test progress in the terminal. Optional — omit to suppress output.
   final ProgressReporter? progressReporter;
+
+  /// Writes a persistent markdown report after the run. Optional — omit to skip.
+  final ReportWriter? reportWriter;
+
+  /// The command string shown in the report header (e.g. `'dart test'`).
+  /// Defaults to `'dart test'` when omitted.
+  final String? command;
+
+  /// Called immediately when a test fails, before the run completes.
+  ///
+  /// Receives the stripped test name (no group prefix, no file paths).
+  /// Used to trigger per-failure desktop notifications via [WindowsNotifier.notifyTestFailed].
   final Future<void> Function(String testName)? onTestFailed;
 
+  /// Runs the test process to completion, dispatches events to [progressReporter]
+  /// and [onTestFailed], then delivers the final [RunSummary] to [notifier].
   Future<void> run() async {
     final process = await runner.start();
-
-    final lines = <String>[];
-    final stderrLines = <String>[];
-    final nameById = <int, String>{};
-    final groupById = <int, String>{};
-    final testGroupIds = <int, List<int>>{};
-    final fileById = <int, String?>{};
-    final pendingNotifications = <Future<void>>[];
-    var passed = 0;
-    var failed = 0;
-    var skipped = 0;
-
+    final state = RunState();
     final startTime = DateTime.now();
+    final directory = Directory.current.path;
 
     await Future.wait([
       process.stdout.forEach((line) {
-        lines.add(line);
-        final event = _tryDecodeEvent(line);
+        state.lines.add(line);
+        final event = TestEvent.tryDecode(line);
         if (event == null) {
           return;
         }
 
-        final type = event['type'] as String?;
+        switch (event) {
+          case GroupEvent e:
+            state.recordGroup(e);
 
-        if (type == 'group') {
-          final group = event['group'] as Map<String, dynamic>?;
-          if (group != null) {
-            final id = group['id'] as int?;
-            final name = (group['name'] as String?) ?? '';
-            if (id != null) {
-              groupById[id] = name;
+          case TestStartEvent e:
+            state.recordTestStart(e);
+            if (state.isUserTest(e.id)) {
+              progressReporter?.onTestStart(
+                state.leafName(e.id),
+                DateTime.now().difference(startTime),
+              );
             }
-          }
-        } else if (type == 'testStart') {
-          final test = event['test'] as Map<String, dynamic>?;
-          if (test != null) {
-            final id = test['id'] as int?;
-            final name = test['name'] as String?;
-            final rawGroupIds = test['groupIDs'] as List<dynamic>?;
-            if (id != null && name != null) {
-              final groupIds = rawGroupIds?.cast<int>() ?? <int>[];
-              nameById[id] = name;
-              testGroupIds[id] = groupIds;
-              fileById[id] = _fileRef(test);
-              final isUserTest = groupIds.length > 1;
-              if (isUserTest) {
-                final leaf = _leafTestName(name, groupIds, groupById);
-                final elapsed = DateTime.now().difference(startTime);
-                progressReporter?.onTestStart(leaf, elapsed);
-              }
+
+          case TestDoneEvent e:
+            if (e.hidden) {
+              return;
             }
-          }
-        } else if (type == 'testDone') {
-          if (event['hidden'] == true) {
-            return;
-          }
-          final result = event['result'] as String?;
-          final isSkipped = event['skipped'] == true;
-          final isPassed = result == 'success';
-          final testId = event['testID'] as int?;
+            final elapsed = state.testElapsed(e.testId);
+            final resultKind = state.recordTestDone(e);
 
-          final resultKind = isSkipped
-              ? TestResultKind.skipped
-              : isPassed
-                  ? TestResultKind.passed
-                  : result == 'error'
-                      ? TestResultKind.errored
-                      : TestResultKind.failed;
-
-          if (isSkipped) {
-            skipped++;
-          } else if (isPassed) {
-            passed++;
-          } else {
-            failed++;
-            final fullName = testId != null ? nameById[testId] : null;
-            if (fullName != null && onTestFailed != null) {
-              final leafName = _stripFilePaths(
-                _leafTestName(
-                  fullName,
-                  testGroupIds[testId] ?? [],
-                  groupById,
+            if (reportWriter != null) {
+              reportWriter!.recordTest(
+                TestRecord(
+                  leafName: state.leafName(e.testId),
+                  groupName: state.outerGroupName(e.testId),
+                  result: resultKind,
+                  fileRef: state.fileRef(e.testId),
+                  duration: elapsed,
                 ),
               );
-              pendingNotifications.add(onTestFailed!(leafName));
             }
-          }
 
-          if (progressReporter != null && testId != null) {
-            final groupIds = testGroupIds[testId] ?? [];
-            final isUserTest = groupIds.length > 1;
-            if (isUserTest || resultKind != TestResultKind.passed) {
-              final fullName = nameById[testId];
-              if (fullName != null) {
-                final leafName = _leafTestName(fullName, groupIds, groupById);
-                progressReporter!.onTestDone(
-                  leafName,
-                  fileById[testId],   // relative path:line, e.g. test/foo_test.dart:10
-                  resultKind,
-                  passed,
-                  failed,
-                  skipped,
-                );
-              }
+            if ((resultKind == TestResultKind.failed ||
+                    resultKind == TestResultKind.errored) &&
+                onTestFailed != null) {
+              state.pendingNotifications
+                  .add(onTestFailed!(state.leafNameStripped(e.testId)));
             }
-          }
+
+            if (progressReporter != null &&
+                (state.isUserTest(e.testId) ||
+                    resultKind != TestResultKind.passed)) {
+              progressReporter!.onTestDone(
+                name: state.leafName(e.testId),
+                fileRef: state.fileRef(e.testId),
+                result: resultKind,
+                totalPassed: state.passed,
+                totalFailed: state.failed,
+                totalSkipped: state.skipped,
+              );
+            }
+
+          case DoneEvent():
         }
       }),
-      process.stderr.forEach(stderrLines.add),
+      process.stderr.forEach(state.stderrLines.add),
     ]);
 
     progressReporter?.done();
-
-    await Future.wait(pendingNotifications);
+    await Future.wait(state.pendingNotifications);
 
     final elapsed = DateTime.now().difference(startTime);
     final exitCode = await process.exitCode;
-    var summary = parser.parse(lines, exitCode);
-
+    var summary = parser.parse(state.lines, exitCode);
     summary = summary.copyWith(duration: elapsed);
 
-    if (summary.outcome == TestOutcome.crash && stderrLines.isNotEmpty) {
-      summary = summary.copyWith(crashOutput: stderrLines.join('\n'));
+    if (summary.outcome == TestOutcome.crash && state.stderrLines.isNotEmpty) {
+      summary = summary.copyWith(crashOutput: state.stderrLines.join('\n'));
+    }
+
+    if (reportWriter != null) {
+      await reportWriter!.finish(
+        summary: summary,
+        command: command ?? 'dart test',
+        directory: directory,
+        startedAt: startTime,
+      );
     }
 
     await notifier.notify(summary);
-  }
-
-  /// Strips the innermost non-empty group name prefix from [fullName].
-  /// dart test accumulates group names, so the deepest group name is the
-  /// full prefix: e.g. "Group A Group B test name" → "test name".
-  String _leafTestName(
-    String fullName,
-    List<int> groupIds,
-    Map<int, String> groupById,
-  ) {
-    for (final id in groupIds.reversed) {
-      final groupName = groupById[id] ?? '';
-      if (groupName.isEmpty) {
-        continue;
-      }
-      final prefix = '$groupName ';
-      return fullName.startsWith(prefix)
-          ? fullName.substring(prefix.length)
-          : fullName;
-    }
-    return fullName;
-  }
-
-  /// Builds a clickable file reference from a testStart [test] object.
-  /// Returns a relative path with optional line suffix, e.g. "test/foo_test.dart:10".
-  String? _fileRef(Map<String, dynamic> test) {
-    final url = test['url'] as String?;
-    if (url == null) return null;
-    final uri = Uri.tryParse(url);
-    if (uri == null || uri.scheme != 'file') return null;
-    final abs = uri.toFilePath();
-    final rel = p.relative(abs, from: Directory.current.path);
-    final line = test['line'] as int?;
-    return line != null ? '$rel:$line' : rel;
-  }
-
-  /// Replaces any absolute file path segment in [name] with just the filename.
-  /// e.g. "loading C:/some/path/foo_test.dart" → "loading foo_test.dart"
-  String _stripFilePaths(String name) {
-    return name.replaceAllMapped(
-      RegExp(r'(?:[A-Za-z]:[/\\]|(?<!\w)/)\S+'),
-      (match) => p.basename(match.group(0)!),
-    );
-  }
-
-  Map<String, dynamic>? _tryDecodeEvent(String line) {
-    final trimmed = line.trim();
-    if (trimmed.isEmpty) {
-      return null;
-    }
-    try {
-      final decoded = jsonDecode(trimmed);
-      if (decoded is Map<String, dynamic>) {
-        return decoded;
-      }
-    } catch (_) {}
-    return null;
   }
 }

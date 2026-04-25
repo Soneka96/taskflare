@@ -1,8 +1,14 @@
-import 'dart:convert';
-
 import 'package:taskflare/taskflare.dart';
 
+import '../entities/test_event.dart';
+
+/// Parses the raw stdout lines from a test process into a [RunSummary].
 class JsonEventParser {
+  /// Parses [lines] collected from the runner's stdout and the process [exitCode]
+  /// into a [RunSummary].
+  ///
+  /// Returns [TestOutcome.crash] when no events could be decoded or when no
+  /// [DoneEvent] was received, indicating the process exited unexpectedly.
   RunSummary parse(List<String> lines, int exitCode) {
     final events = _decodeEvents(lines);
 
@@ -15,7 +21,7 @@ class JsonEventParser {
       );
     }
 
-    final done = _findDoneEvent(events);
+    final done = events.whereType<DoneEvent>().lastOrNull;
 
     if (done == null) {
       return const RunSummary(
@@ -28,8 +34,7 @@ class JsonEventParser {
 
     final nameById = _buildNameMap(events);
     final counts = _countResults(events, nameById);
-
-    final success = (done['success'] as bool?) ?? (exitCode == 0);
+    final success = done.success ?? (exitCode == 0);
 
     final outcome = !success
         ? (counts.failed > 0 ? TestOutcome.failure : TestOutcome.crash)
@@ -44,71 +49,50 @@ class JsonEventParser {
     );
   }
 
-  List<Map<String, dynamic>> _decodeEvents(List<String> lines) {
-    final events = <Map<String, dynamic>>[];
+  List<TestEvent> _decodeEvents(List<String> lines) {
+    final events = <TestEvent>[];
     for (final line in lines) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) continue;
-      try {
-        final decoded = jsonDecode(trimmed);
-        if (decoded is Map<String, dynamic>) {
-          events.add(decoded);
-        }
-      } catch (_) {
-        // non-JSON lines are skipped
+      final event = TestEvent.tryDecode(line);
+      if (event != null) {
+        events.add(event);
       }
     }
     return events;
   }
 
-  Map<String, dynamic>? _findDoneEvent(List<Map<String, dynamic>> events) {
-    for (final event in events.reversed) {
-      if (event['type'] == 'done') return event;
-    }
-    return null;
-  }
-
-  Map<int, String> _buildNameMap(List<Map<String, dynamic>> events) {
+  Map<int, String> _buildNameMap(List<TestEvent> events) {
     final names = <int, String>{};
     for (final event in events) {
-      if (event['type'] != 'testStart') continue;
-      final test = event['test'] as Map<String, dynamic>?;
-      if (test == null) continue;
-      final id = test['id'] as int?;
-      final name = test['name'] as String?;
-      if (id != null && name != null) {
-        names[id] = name;
+      if (event is TestStartEvent) {
+        names[event.id] = event.name;
       }
     }
     return names;
   }
 
-  _TestCounts _countResults(
-    List<Map<String, dynamic>> events,
-    Map<int, String> nameById,
-  ) {
+  _TestCounts _countResults(List<TestEvent> events, Map<int, String> nameById) {
     var passed = 0;
     var failed = 0;
     var skipped = 0;
     final failedTestNames = <String>[];
 
     for (final event in events) {
-      if (event['type'] != 'testDone') continue;
-      if (event['hidden'] == true) continue;
+      if (event is! TestDoneEvent) {
+        continue;
+      }
+      if (event.hidden) {
+        continue;
+      }
 
-      final result = event['result'] as String?;
-      final isSkipped = event['skipped'] == true;
-      final testId = event['testID'] as int?;
-
-      if (isSkipped) {
+      if (event.skipped) {
         skipped++;
-      } else if (result == 'success') {
+      } else if (event.result == 'success') {
         passed++;
       } else {
         failed++;
-        if (testId != null) {
-          final name = nameById[testId];
-          if (name != null) failedTestNames.add(name);
+        final name = nameById[event.testId];
+        if (name != null) {
+          failedTestNames.add(name);
         }
       }
     }
