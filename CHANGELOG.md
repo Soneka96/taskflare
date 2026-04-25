@@ -6,6 +6,9 @@
 - `taskflare help` opens an interactive command list; `taskflare help test` prints help non-interactively
 - `taskflare` with no arguments no longer auto-runs tests — use `taskflare test` or choose "Run command" from the menu
 - All menu-driven screens are backed by a central command registry — adding a future command requires one entry
+- Fix: interactive menus no longer leave ghost content when navigating deep (menu → help → command detail → back). All TUI flows now run inside the terminal's alternate screen buffer, which provides a stable viewport cleared on each redraw — unaffected by scroll height. On exit the original terminal contents are restored.
+- `TerminalScreen` replaced by `TerminalSession` — a single injected instance that owns the alt buffer lifecycle. A SIGINT handler ensures the buffer is always restored on Ctrl-C.
+- After launching a command from "Run command", the alt buffer is exited so the command's output lands in normal terminal scrollback. The menu does not loop back after a run.
 
 ## 0.1.10
 
