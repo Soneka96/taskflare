@@ -5,7 +5,6 @@ import 'notifier/notifier.dart';
 import 'notifier/progress_reporter.dart';
 import 'parser/json_event_parser.dart';
 import 'reporter/report_writer.dart';
-import 'reporter/test_record.dart';
 import 'runner/command_runner.dart';
 import 'runner/run_state.dart';
 import 'utils/enums.dart';
@@ -41,7 +40,6 @@ class Taskflare {
   final ReportWriter? reportWriter;
 
   /// The command string shown in the report header (e.g. `'dart test'`).
-  /// Defaults to `'dart test'` when omitted.
   final String? command;
 
   /// Called immediately when a test fails, before the run completes.
@@ -75,9 +73,10 @@ class Taskflare {
 
           case TestStartEvent e:
             state.recordTestStart(e);
-            if (state.isUserTest(e.id)) {
+            final test = state.get(e.id);
+            if (test != null && test.isUserTest) {
               progressReporter?.onTestStart(
-                state.leafName(e.id),
+                test.leafName,
                 DateTime.now().difference(startTime),
               );
             }
@@ -86,35 +85,25 @@ class Taskflare {
             if (e.hidden) {
               return;
             }
-            final elapsed = state.testElapsed(e.testId);
-            final resultKind = state.recordTestDone(e);
-
-            if (reportWriter != null) {
-              reportWriter!.recordTest(
-                TestRecord(
-                  leafName: state.leafName(e.testId),
-                  groupName: state.outerGroupName(e.testId),
-                  result: resultKind,
-                  fileRef: state.fileRef(e.testId),
-                  duration: elapsed,
-                ),
-              );
+            final test = state.recordTestDone(e);
+            if (test == null) {
+              return;
             }
 
-            if ((resultKind == TestResultKind.failed ||
-                    resultKind == TestResultKind.errored) &&
+            reportWriter?.recordTest(test);
+
+            if ((test.result == TestResultKind.failed ||
+                    test.result == TestResultKind.errored) &&
                 onTestFailed != null) {
-              state.pendingNotifications
-                  .add(onTestFailed!(state.leafNameStripped(e.testId)));
+              state.pendingNotifications.add(onTestFailed!(test.leafNameStripped));
             }
 
             if (progressReporter != null &&
-                (state.isUserTest(e.testId) ||
-                    resultKind != TestResultKind.passed)) {
+                (test.isUserTest || test.result != TestResultKind.passed)) {
               progressReporter!.onTestDone(
-                name: state.leafName(e.testId),
-                fileRef: state.fileRef(e.testId),
-                result: resultKind,
+                name: test.leafName,
+                fileRef: test.fileRef,
+                result: test.result,
                 totalPassed: state.passed,
                 totalFailed: state.failed,
                 totalSkipped: state.skipped,
