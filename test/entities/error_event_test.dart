@@ -8,11 +8,11 @@ void main() {
       expect(e.isExpectFailure, isTrue);
     });
 
-    test('true when error message starts with TestFailure (', () {
+    test('true when error message contains TestFailure', () {
       final e = ErrorEvent(
         testId: 1,
         isFailure: false,
-        error: 'TestFailure (Expected: exactly one matching candidate\n  Actual: ...)',
+        error: 'The following TestFailure was thrown running a test:\nExpected: exactly one matching candidate\n  Actual: ...',
       );
       expect(e.isExpectFailure, isTrue);
     });

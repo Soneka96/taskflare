@@ -34,5 +34,5 @@ class ErrorEvent extends TestEvent {
   /// (Flutter wraps `TestFailure` before it reaches the JSON reporter,
   /// causing [isFailure] to be `false` even for assertion mismatches).
   bool get isExpectFailure =>
-      isFailure || error.startsWith('TestFailure (') || error.startsWith('Expected:');
+      isFailure || error.contains('TestFailure') || error.startsWith('Expected:');
 }
