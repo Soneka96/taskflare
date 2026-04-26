@@ -18,6 +18,8 @@ class RunState {
 
   final _tests = <int, Test>{};
   final _groupById = <int, String>{};
+  // Buffered error events that arrived before testStart for the same ID.
+  final _pendingErrors = <int, ErrorEvent>{};
 
   /// Number of tests that have passed so far.
   int passed = 0;
@@ -36,8 +38,10 @@ class RunState {
   }
 
   /// Creates a [Test] from a `testStart` event and stores it by ID.
+  ///
+  /// Also applies any buffered [ErrorEvent] that arrived before this start.
   void recordTestStart(TestStartEvent e) {
-    _tests[e.id] = Test.fromStart(
+    final test = Test.fromStart(
       id: e.id,
       rawName: e.name,
       groupIds: e.groupIds,
@@ -45,12 +49,21 @@ class RunState {
       line: e.line,
       groupNames: _groupById,
     );
+    _tests[e.id] = test;
+    final pending = _pendingErrors.remove(e.id);
+    if (pending != null) {
+      test.errorMessage = pending.error;
+      test.isExpectFailure = pending.isExpectFailure;
+    }
   }
 
   /// Attaches error details to the matching [Test].
+  ///
+  /// If the [Test] hasn't started yet, buffers the event until [recordTestStart] fires.
   void recordError(ErrorEvent e) {
     final test = _tests[e.testId];
     if (test == null) {
+      _pendingErrors[e.testId] = e;
       return;
     }
     test.errorMessage = e.error;
