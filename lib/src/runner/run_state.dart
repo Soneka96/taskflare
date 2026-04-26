@@ -51,9 +51,9 @@ class RunState {
     _startTimeById[e.id] = DateTime.now();
   }
 
-  /// Records an [ErrorEvent], storing whether it was a [TestFailure] from `expect()`.
+  /// Records an [ErrorEvent], storing whether it originated from an `expect()` call.
   void recordError(ErrorEvent e) {
-    _isFailureById[e.testId] = e.isFailure;
+    _isFailureById[e.testId] = e.isExpectFailure;
   }
 
   /// Records a test completion from a [TestDoneEvent], increments the appropriate counter,
