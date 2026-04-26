@@ -29,6 +29,7 @@ Problems encountered during development and what we learned from them.
 **Problem:** The `IPropertyStore.SetValue` signature requires `ref PropertyKey`. Passing a `static readonly PropertyKey` directly as `ref` is rejected by the C# compiler ("Cannot pass ref or out argument to a readonly field except in a static constructor").
 
 **Fix:** Copy the field into a local variable before passing it:
+
 ```csharp
 var key = PKEY_AppUserModel_ID;
 ps.SetValue(ref key, ref pv);
@@ -58,7 +59,7 @@ ps.SetValue(ref key, ref pv);
 
 **Solution:** Wrap the bundled PNG inside a minimal ICO container at runtime. The Vista+ ICO format allows embedding a raw PNG directly — no pixel decoding or re-encoding needed:
 
-```
+``` dart
 ICONDIR   (6 bytes)   reserved=0, type=1, count=1
 ICONDIRENTRY (16 bytes)  width=0 (256), height=0 (256), colorCount=0, reserved=0,
                           planes=1, bitCount=32, imageSize=len(png), offset=22
@@ -74,15 +75,17 @@ PNG bytes (verbatim)
 **Problem:** Dart CLI tools don't have a Flutter-style asset bundling system. Embedding a large binary file as a byte literal in Dart source is impractical to maintain and review.
 
 **Solution:** Place the asset under `lib/assets/` so it is part of the package. At runtime, resolve it with:
+
 ```dart
 final uri = await Isolate.resolvePackageUri(Uri.parse('package:taskflare/assets/icon.png'));
 final bytes = await File.fromUri(uri!).readAsBytes();
 ```
+
 This works for `dart run`, `dart pub global activate`, and `dart pub global run` because the package root is always resolvable. It does **not** work for compiled `dart compile exe` binaries (the package filesystem is unavailable after compilation).
 
 ---
 
-## _isRegistered must check all components to avoid silent skips
+## \_isRegistered must check all components to avoid silent skips
 
 **Problem:** The initial `_isRegistered` check only verified the registry key. If the icon file or Start Menu shortcut was missing (e.g. after a manual deletion or a first run without the icon), the check returned `true` and re-registration was skipped, leaving the notification broken.
 

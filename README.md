@@ -168,8 +168,8 @@ The integration tests in `test/runner/` spin up real subprocesses using the fixt
 
 ## Project conventions
 
-| Document                                                               | Contents                                                      |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Document                                                             | Contents                                                      |
+| -------------------------------------------------------------------- | ------------------------------------------------------------- |
 | [`doc/conventions_testing.md`](doc/conventions_testing.md)           | Test structure, group/test naming rules, what must be covered |
 | [`doc/conventions_architecture.md`](doc/conventions_architecture.md) | Folder layout, layer dependency rules, naming patterns        |
 | [`doc/learnings.md`](doc/learnings.md)                               | Problems encountered and what we learned from them            |
