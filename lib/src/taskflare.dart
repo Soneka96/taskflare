@@ -67,6 +67,9 @@ class Taskflare {
         }
 
         switch (event) {
+          case ErrorEvent e:
+            state.recordError(e);
+
           case GroupEvent e:
             state.recordGroup(e);
 

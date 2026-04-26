@@ -25,6 +25,9 @@ class RunState {
   final _fileById = <int, String?>{};
   final _startTimeById = <int, DateTime>{};
 
+  // Tracks whether the most recent error event for a test was a TestFailure.
+  final _isFailureById = <int, bool>{};
+
   /// Number of tests that have passed so far.
   int passed = 0;
 
@@ -48,14 +51,24 @@ class RunState {
     _startTimeById[e.id] = DateTime.now();
   }
 
+  /// Records an [ErrorEvent], storing whether it was a [TestFailure] from `expect()`.
+  void recordError(ErrorEvent e) {
+    _isFailureById[e.testId] = e.isFailure;
+  }
+
   /// Records a test completion from a [TestDoneEvent], increments the appropriate counter,
   /// and returns the [TestResultKind].
+  ///
+  /// When the runner reports `result: 'error'` but a preceding [ErrorEvent] had
+  /// `isFailure: true`, the result is reclassified as [TestResultKind.failed]
+  /// so that `expect()` mismatches are not shown as uncaught exceptions.
   TestResultKind recordTestDone(TestDoneEvent e) {
+    final isExpectFailure = _isFailureById[e.testId] ?? false;
     final resultKind = e.skipped
         ? TestResultKind.skipped
         : e.result == 'success'
             ? TestResultKind.passed
-            : e.result == 'error'
+            : e.result == 'error' && !isExpectFailure
                 ? TestResultKind.errored
                 : TestResultKind.failed;
 
