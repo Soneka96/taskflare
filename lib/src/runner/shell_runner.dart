@@ -3,6 +3,10 @@ import 'dart:io';
 
 import 'command_runner.dart';
 
+/// Environment variable set in every process spawned by [ShellRunner] so that
+/// taskflare can detect and refuse a nested invocation.
+const String taskflareRunningEnv = 'TASKFLARE_RUNNING';
+
 /// A [CommandRunner] that spawns an arbitrary shell command and streams its output.
 class ShellRunner extends CommandRunner {
   const ShellRunner({required this.command});
@@ -16,10 +20,14 @@ class ShellRunner extends CommandRunner {
     final executable = parts.first;
     final args = parts.skip(1).toList();
 
+    final env = Map<String, String>.from(Platform.environment)
+      ..[taskflareRunningEnv] = '1';
+
     final process = await Process.start(
       executable,
       args,
       runInShell: true,
+      environment: env,
     );
 
     return CommandProcess(
