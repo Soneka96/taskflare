@@ -1,4 +1,5 @@
 import 'package:taskflare/src/cli/config_command.dart';
+import 'package:taskflare/src/cli/custom_command.dart';
 import 'package:taskflare/src/cli/help_command.dart';
 import 'package:taskflare/src/cli/menu_command.dart';
 import 'package:taskflare/src/cli/terminal.dart';
@@ -15,6 +16,9 @@ Future<void> main(List<String> args) async {
     case 'test':
       final config = await TaskflareConfig.load();
       await runTestCommand(args.skip(1).toList(), config);
+    case 'run':
+      final config = await TaskflareConfig.load();
+      await runCustomCommand(args.skip(1).toList(), config);
     case 'config':
       final term = TerminalSession();
       await term.run(() => runConfigCommand(term));

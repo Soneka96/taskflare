@@ -8,8 +8,8 @@ import 'test_record.dart';
 /// A [ReportWriter] that produces a Markdown file in a `taskflare-reports/`
 /// subdirectory of the working directory.
 ///
-/// Tests are buffered in memory and written all at once in [finish], grouped
-/// by their outermost group name so the document is clean when viewed in an IDE.
+/// Tests are buffered in memory and written all at once in [finish]. The
+/// document order is: header → summary → failed → skipped → all tests by group.
 class MarkdownReportWriter implements ReportWriter {
   /// Creates a [MarkdownReportWriter] that writes files into [reportsDirectory].
   MarkdownReportWriter({required this.reportsDirectory});
@@ -17,7 +17,7 @@ class MarkdownReportWriter implements ReportWriter {
   /// Absolute path to the directory where report files are written.
   final String reportsDirectory;
 
-  /// Tests grouped by [TestRecord.groupName], preserving the order groups first appear.
+  /// Tests grouped by [TestRecord.groupName], preserving insertion order.
   final _groups = <String, List<TestRecord>>{};
 
   @override
@@ -46,6 +46,8 @@ class MarkdownReportWriter implements ReportWriter {
   ) {
     final buf = StringBuffer();
 
+    // ── Header ────────────────────────────────────────────────────────────────
+
     buf.writeln('# Taskflare Run');
     buf.writeln();
     buf.writeln('**Started:** ${_datetime(startedAt)}  ');
@@ -54,7 +56,69 @@ class MarkdownReportWriter implements ReportWriter {
     buf.writeln();
     buf.writeln('---');
     buf.writeln();
-    buf.writeln('## Tests');
+
+    // ── Summary ───────────────────────────────────────────────────────────────
+
+    buf.writeln('## Summary');
+    buf.writeln();
+
+    final outcomeLabel = switch (summary.outcome) {
+      TestOutcome.success => 'SUCCESS',
+      TestOutcome.failure => 'FAILURE',
+      TestOutcome.crash => 'CRASH',
+    };
+
+    buf.writeln('- **Outcome:** $outcomeLabel');
+    buf.writeln('- **Passed:** ${summary.passed}');
+    buf.writeln('- **Failed:** ${summary.failed}');
+    buf.writeln('- **Skipped:** ${summary.skipped}');
+
+    if (summary.duration != null) {
+      final secs = (summary.duration!.inMilliseconds / 1000).toStringAsFixed(1);
+      buf.writeln('- **Duration:** ${secs}s');
+    }
+
+    buf.writeln();
+    buf.writeln('---');
+    buf.writeln();
+
+    // ── Failed ────────────────────────────────────────────────────────────────
+
+    final failed = _allRecords()
+        .where((r) => r.result == TestResultKind.failed || r.result == TestResultKind.errored)
+        .toList();
+
+    if (failed.isNotEmpty) {
+      buf.writeln('## Failed tests');
+      buf.writeln();
+      for (final record in failed) {
+        buf.writeln(_testLine(record));
+      }
+      buf.writeln();
+      buf.writeln('---');
+      buf.writeln();
+    }
+
+    // ── Skipped ───────────────────────────────────────────────────────────────
+
+    final skipped = _allRecords()
+        .where((r) => r.result == TestResultKind.skipped)
+        .toList();
+
+    if (skipped.isNotEmpty) {
+      buf.writeln('## Skipped tests');
+      buf.writeln();
+      for (final record in skipped) {
+        buf.writeln(_testLine(record));
+      }
+      buf.writeln();
+      buf.writeln('---');
+      buf.writeln();
+    }
+
+    // ── All tests by group ────────────────────────────────────────────────────
+
+    buf.writeln('## All tests');
     buf.writeln();
 
     if (_groups.isEmpty) {
@@ -72,38 +136,10 @@ class MarkdownReportWriter implements ReportWriter {
       }
     }
 
-    buf.writeln('---');
-    buf.writeln();
-    buf.writeln('## Summary');
-    buf.writeln();
-
-    final outcome = switch (summary.outcome) {
-      TestOutcome.success => 'SUCCESS',
-      TestOutcome.failure => 'FAILURE',
-      TestOutcome.crash => 'CRASH',
-    };
-
-    buf.writeln('- **Outcome:** $outcome');
-    buf.writeln('- **Passed:** ${summary.passed}');
-    buf.writeln('- **Failed:** ${summary.failed}');
-    buf.writeln('- **Skipped:** ${summary.skipped}');
-
-    if (summary.duration != null) {
-      final secs = (summary.duration!.inMilliseconds / 1000).toStringAsFixed(1);
-      buf.writeln('- **Duration:** ${secs}s');
-    }
-
-    if (summary.failedTestNames.isNotEmpty) {
-      buf.writeln();
-      buf.writeln('### Failed tests');
-      buf.writeln();
-      for (final name in summary.failedTestNames) {
-        buf.writeln('- $name');
-      }
-    }
-
     return buf.toString();
   }
+
+  Iterable<TestRecord> _allRecords() => _groups.values.expand((r) => r);
 
   String _testLine(TestRecord record) {
     final icon = switch (record.result) {
@@ -124,7 +160,7 @@ class MarkdownReportWriter implements ReportWriter {
 
     final meta = <String>[];
     if (record.fileRef != null) {
-      meta.add('`${record.fileRef}`');
+      meta.add(record.fileRef!);
     }
     if (record.duration != null) {
       final secs = (record.duration!.inMilliseconds / 1000).toStringAsFixed(2);
