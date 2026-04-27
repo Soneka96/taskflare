@@ -29,6 +29,7 @@ Problems encountered during development and what we learned from them.
 **Problem:** The `IPropertyStore.SetValue` signature requires `ref PropertyKey`. Passing a `static readonly PropertyKey` directly as `ref` is rejected by the C# compiler ("Cannot pass ref or out argument to a readonly field except in a static constructor").
 
 **Fix:** Copy the field into a local variable before passing it:
+
 ```csharp
 var key = PKEY_AppUserModel_ID;
 ps.SetValue(ref key, ref pv);
@@ -58,7 +59,7 @@ ps.SetValue(ref key, ref pv);
 
 **Solution:** Wrap the bundled PNG inside a minimal ICO container at runtime. The Vista+ ICO format allows embedding a raw PNG directly — no pixel decoding or re-encoding needed:
 
-```
+``` dart
 ICONDIR   (6 bytes)   reserved=0, type=1, count=1
 ICONDIRENTRY (16 bytes)  width=0 (256), height=0 (256), colorCount=0, reserved=0,
                           planes=1, bitCount=32, imageSize=len(png), offset=22
@@ -74,34 +75,17 @@ PNG bytes (verbatim)
 **Problem:** Dart CLI tools don't have a Flutter-style asset bundling system. Embedding a large binary file as a byte literal in Dart source is impractical to maintain and review.
 
 **Solution:** Place the asset under `lib/assets/` so it is part of the package. At runtime, resolve it with:
+
 ```dart
 final uri = await Isolate.resolvePackageUri(Uri.parse('package:taskflare/assets/icon.png'));
 final bytes = await File.fromUri(uri!).readAsBytes();
 ```
+
 This works for `dart run`, `dart pub global activate`, and `dart pub global run` because the package root is always resolvable. It does **not** work for compiled `dart compile exe` binaries (the package filesystem is unavailable after compilation).
 
 ---
 
-## Automated pub.dev publishing via GitHub Actions
-
-**Goal:** Merge a PR into `main` → package automatically published to pub.dev.
-
-**Architecture:** Two workflows are required because pub.dev's OIDC check requires the workflow to be triggered by a tag push (not a branch push). A single workflow on push-to-main cannot satisfy this.
-
-1. **auto-tag.yml** — triggers on push to `main`, reads `version:` from `pubspec.yaml`, creates and pushes `v{version}` tag if it doesn't already exist.
-2. **publish.yml** — triggers on tag push matching `v*`, runs `dart pub publish --dry-run` then `dart pub publish -f` using OIDC (`id-token: write` permission).
-
-**Why a PAT is required for auto-tag:** GitHub blocks `GITHUB_TOKEN` pushes from triggering other workflow runs (security policy). A classic Personal Access Token with `repo` scope must be stored as `GH_PAT` secret and passed to `actions/checkout` so the tag push triggers `publish.yml`.
-
-**pub.dev configuration (one-time):** Enable automated publishing at pub.dev → package Admin tab. Set tag pattern to `v{{version}}`, check "Enable publishing from push events", check "Require GitHub Actions environment", set environment name to `pub.dev`.
-
-**GitHub environment protection rules gotcha:** The environment must allow **both** branch `main` (for auto-tag.yml) and tag pattern `v*` (for publish.yml). Without the `v*` tag rule, publish.yml fails with "Tag is not allowed to deploy to pub.dev due to environment protection rules" even though the tag was created from main.
-
-**YAML gotcha:** `run: echo "..." | sed 's/version: *//'` fails YAML parsing because `version: ` (colon followed by space) inside an unquoted scalar is treated as a nested mapping key. Always use `run: |` block scalar for commands containing colon-space sequences.
-
----
-
-## _isRegistered must check all components to avoid silent skips
+## \_isRegistered must check all components to avoid silent skips
 
 **Problem:** The initial `_isRegistered` check only verified the registry key. If the icon file or Start Menu shortcut was missing (e.g. after a manual deletion or a first run without the icon), the check returned `true` and re-registration was skipped, leaving the notification broken.
 

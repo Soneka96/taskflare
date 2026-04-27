@@ -1,11 +1,13 @@
 import 'dart:convert';
 
 import 'done_event.dart';
+import 'error_event.dart';
 import 'group_event.dart';
 import 'test_done_event.dart';
 import 'test_start_event.dart';
 
 export 'done_event.dart';
+export 'error_event.dart';
 export 'group_event.dart';
 export 'test_done_event.dart';
 export 'test_start_event.dart';
@@ -30,6 +32,7 @@ abstract class TestEvent {
         'group' => GroupEvent.fromJson(json),
         'testStart' => TestStartEvent.fromJson(json),
         'testDone' => TestDoneEvent.fromJson(json),
+        'error' => ErrorEvent.fromJson(json),
         'done' => DoneEvent.fromJson(json),
         _ => null,
       };

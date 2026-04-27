@@ -5,19 +5,22 @@
 ```text
 lib/src/
 ├── cli/                # Entry-point commands: menu, help, run, config
-│   ├── profile/        # CommandProfile abstractions and concrete impls (TestProfile, …)
+│   ├── profile/        # CommandProfile abstractions and concrete impls (TestProfile, RunProfile, …)
 │   ├── command_registry.dart   # Central list of all runnable commands
 │   ├── terminal.dart           # TerminalSession — alt buffer lifecycle, injected into all TUI screens
 │   ├── menu_command.dart       # Main interactive menu (bare `taskflare`)
 │   ├── help_command.dart       # Interactive help index + non-interactive per-command help
-│   ├── run_command.dart        # "Run command" submenu
-│   ├── config_command.dart     # Config menu
+│   ├── run_command.dart        # "Run command" submenu (menu-driven selection)
+│   ├── custom_command.dart     # Handles `taskflare run [cmd]` — prompts, streams output, notifies
+│   ├── config_command.dart     # Config menu (Tests / Run sections)
 │   └── test_command.dart       # Wires Taskflare for the `test` command
-├── entities/     # Pure data classes — no I/O, no business logic
+├── config/       # Persisted user preferences (per-command toggles), read/written as JSON
+├── entities/     # Domain objects accumulated across a run (Test, ErrorEvent, …)
 ├── utils/        # Shared utilities: enums, constants, helpers
-├── parser/       # Transforms raw output into domain types
+├── parser/       # Transforms raw JSON test output into domain types
 ├── runner/       # Launches subprocesses, exposes output as streams
-├── notifier/     # Delivers results to the user (console, OS, webhook)
+├── reporter/     # Markdown report writers for test runs and shell commands
+├── notifier/     # Delivers results to the user (console, OS toast, composite)
 └── taskflare.dart  # Orchestrator — wires all layers together
 ```
 
@@ -51,8 +54,8 @@ lib/src/
 
 ## Entities
 
-- Immutable (`final` fields)
-- Provide `copyWith` when the entity has more than one field
+- Fields that are known at construction time are `final`; fields populated incrementally across multiple events (e.g. `Test.result`, `Test.duration`) are mutable
+- Provide `copyWith` when the entity is fully immutable and has more than one field
 - Override `==` and `hashCode` (or use `package:equatable` if added)
 - No methods that perform I/O or computation beyond value transformation
 

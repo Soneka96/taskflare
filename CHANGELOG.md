@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1
+
+- `taskflare run [cmd]` — runs any shell command, streams its output to the terminal, fires a Windows notification when it finishes, and optionally writes a markdown report
+- Config restructured into two sections: **Tests** (filter toggles + report toggle) and **Run** (report on/off). Legacy flat config files are still read correctly
+- Recursion guard: if taskflare is already running, a nested `taskflare run` is rejected with a clear error rather than spawning infinitely
+- Fix: Flutter widget test failures from `expect()` now classify as **FAIL** instead of **THROW**. Flutter wraps `TestFailure` through its own error handler before it reaches the JSON reporter, causing `isFailure: false` and the real exception text to appear only in a `print` event; the classification now also detects the `"Test failed. See exception logs above…"` marker string
+- Fix: file references in the terminal and markdown report now resolve to the user's test file for Flutter widget tests. The JSON `testStart` event sets `url` to a `package:flutter_test/…` path and puts the actual file in `root_url`/`root_line`; taskflare now prefers the root location
+- THROW results show file path without a line number; all other results show `path:line`
+- Markdown report section order: Summary → Failed tests → Skipped tests → All tests. Failed and Skipped sections use the same rich per-test format as All tests (icon, label, file ref, duration)
+
 ## 0.2.0
 
 - Interactive main menu shown when running `taskflare` with no arguments — logo, tagline, and options for Help, Config, Run command, and Quit

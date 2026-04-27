@@ -1,5 +1,7 @@
 import '../config/taskflare_config.dart';
+import 'custom_command.dart';
 import 'profile/command_profile.dart';
+import 'profile/run_profile.dart';
 import 'profile/test_profile.dart';
 import 'test_command.dart';
 
@@ -22,5 +24,9 @@ List<CliCommandEntry> get commandRegistry => [
       CliCommandEntry(
         profile: const TestProfile(),
         run: (args, config) => runTestCommand(args, config),
+      ),
+      CliCommandEntry(
+        profile: const RunProfile(),
+        run: (args, config) => runCustomCommand(args, config),
       ),
     ];

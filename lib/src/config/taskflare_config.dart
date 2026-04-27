@@ -7,63 +7,90 @@ import 'dart:io';
 /// the `taskflare config` interactive menu.
 class TaskflareConfig {
   /// Creates a [TaskflareConfig] with the given settings.
-  ///
-  /// All fields default to their recommended out-of-the-box values.
   const TaskflareConfig({
-    this.reportEnabled = true,
+    this.testReportEnabled = true,
     this.showFailed = true,
     this.showErrored = true,
     this.showSkipped = true,
+    this.runReportEnabled = true,
   });
+
+  /// Whether to generate a markdown report in `taskflare-reports/` after each `taskflare test` run.
+  final bool testReportEnabled;
+
+  /// Whether to print a permanent FAIL line in the terminal when a test fails.
+  final bool showFailed;
+
+  /// Whether to print a permanent THROW line in the terminal when a test errors.
+  final bool showErrored;
+
+  /// Whether to print a permanent SKIP line in the terminal when a test is skipped.
+  final bool showSkipped;
+
+  /// Whether to generate a markdown report in `taskflare-reports/` after each `taskflare run` invocation.
+  final bool runReportEnabled;
 
   /// Deserialises a [TaskflareConfig] from a JSON map.
   ///
-  /// Missing fields fall back to their defaults, so older config files remain valid.
+  /// Supports both the current nested format (`tests` / `run` keys) and the
+  /// legacy flat format (`report` / `filter` keys) so older config files remain valid.
   factory TaskflareConfig.fromJson(Map<String, dynamic> json) {
+    final testsBlock = (json['tests'] as Map?)?.cast<String, dynamic>();
+    final runBlock = (json['run'] as Map?)?.cast<String, dynamic>();
+
+    if (testsBlock != null || runBlock != null) {
+      final report = (testsBlock?['report'] as Map?)?.cast<String, dynamic>() ?? {};
+      final filter = (testsBlock?['filter'] as Map?)?.cast<String, dynamic>() ?? {};
+      final runReport = (runBlock?['report'] as Map?)?.cast<String, dynamic>() ?? {};
+      return TaskflareConfig(
+        testReportEnabled: report['enabled'] as bool? ?? true,
+        showFailed: filter['showFailed'] as bool? ?? true,
+        showErrored: filter['showErrored'] as bool? ?? true,
+        showSkipped: filter['showSkipped'] as bool? ?? true,
+        runReportEnabled: runReport['enabled'] as bool? ?? true,
+      );
+    }
+
+    // Legacy format.
     final report = (json['report'] as Map?)?.cast<String, dynamic>() ?? {};
     final filter = (json['filter'] as Map?)?.cast<String, dynamic>() ?? {};
     return TaskflareConfig(
-      reportEnabled: report['enabled'] as bool? ?? true,
+      testReportEnabled: report['enabled'] as bool? ?? true,
       showFailed: filter['showFailed'] as bool? ?? true,
       showErrored: filter['showErrored'] as bool? ?? true,
       showSkipped: filter['showSkipped'] as bool? ?? true,
     );
   }
 
-  /// Whether to generate a markdown report file in `taskflare-reports/` after each run.
-  final bool reportEnabled;
-
-  /// Whether to print a permanent FAIL line in the terminal when a test fails (assertion error).
-  final bool showFailed;
-
-  /// Whether to print a permanent THROW line in the terminal when a test errors (uncaught exception).
-  final bool showErrored;
-
-  /// Whether to print a permanent SKIP line in the terminal when a test is skipped.
-  final bool showSkipped;
-
   /// Serialises this config to a JSON map.
   Map<String, dynamic> toJson() => {
-        'report': {'enabled': reportEnabled},
-        'filter': {
-          'showFailed': showFailed,
-          'showErrored': showErrored,
-          'showSkipped': showSkipped,
+        'tests': {
+          'report': {'enabled': testReportEnabled},
+          'filter': {
+            'showFailed': showFailed,
+            'showErrored': showErrored,
+            'showSkipped': showSkipped,
+          },
+        },
+        'run': {
+          'report': {'enabled': runReportEnabled},
         },
       };
 
   /// Returns a copy of this config with the given fields replaced.
   TaskflareConfig copyWith({
-    bool? reportEnabled,
+    bool? testReportEnabled,
     bool? showFailed,
     bool? showErrored,
     bool? showSkipped,
+    bool? runReportEnabled,
   }) {
     return TaskflareConfig(
-      reportEnabled: reportEnabled ?? this.reportEnabled,
+      testReportEnabled: testReportEnabled ?? this.testReportEnabled,
       showFailed: showFailed ?? this.showFailed,
       showErrored: showErrored ?? this.showErrored,
       showSkipped: showSkipped ?? this.showSkipped,
+      runReportEnabled: runReportEnabled ?? this.runReportEnabled,
     );
   }
 
