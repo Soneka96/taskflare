@@ -226,7 +226,16 @@ Test _makeTest({
   );
   test.result = result;
   test.duration = duration;
-  test.fileRef = fileRef;
+  if (fileRef != null) {
+    final colon = fileRef.lastIndexOf(':');
+    final maybeLine = colon == -1 ? null : int.tryParse(fileRef.substring(colon + 1));
+    if (maybeLine != null) {
+      test.filePath = fileRef.substring(0, colon);
+      test.line = maybeLine;
+    } else {
+      test.filePath = fileRef;
+    }
+  }
   return test;
 }
 

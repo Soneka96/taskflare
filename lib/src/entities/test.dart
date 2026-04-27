@@ -16,7 +16,8 @@ class Test {
     required this.leafName,
     required this.groupName,
     required this.groupIds,
-    required this.fileRef,
+    required this.filePath,
+    required this.line,
     required this.startedAt,
   });
 
@@ -29,14 +30,18 @@ class Test {
     required String? url,
     required int? line,
     required Map<int, String> groupNames,
+    String? rootUrl,
+    int? rootLine,
   }) {
+    final (path, resolvedLine) = _resolveLocation(url, line, rootUrl, rootLine);
     return Test._(
       id: id,
       rawName: rawName,
       leafName: _stripGroupPrefix(rawName, groupIds, groupNames),
       groupName: _outerGroupName(groupIds, groupNames),
       groupIds: groupIds,
-      fileRef: _buildFileRef(url, line),
+      filePath: path,
+      line: resolvedLine,
       startedAt: DateTime.now(),
     );
   }
@@ -58,8 +63,20 @@ class Test {
   /// IDs of all containing groups, outermost first.
   final List<int> groupIds;
 
-  /// Relative `path:line` source reference, or `null` when unavailable.
-  String? fileRef;
+  /// Relative path to the test source file, or `null` when unavailable.
+  String? filePath;
+
+  /// Line number within [filePath], or `null` when unknown.
+  int? line;
+
+  /// Relative `path:line` source reference, or just `path` when [line] is null,
+  /// or `null` when [filePath] is null.
+  String? get fileRef {
+    if (filePath == null) {
+      return null;
+    }
+    return line != null ? '$filePath:$line' : filePath;
+  }
 
   /// Wall-clock time when the test started.
   final DateTime startedAt;
@@ -124,7 +141,25 @@ class Test {
     return fullName;
   }
 
-  static String? _buildFileRef(String? url, int? line) {
+  /// Picks the best (path, line) pair from a `testStart` event.
+  ///
+  /// Prefers [rootUrl]/[rootLine] when present (Flutter's `testWidgets` puts
+  /// the user-test location there while [url] points at the framework file).
+  /// Falls back to [url]/[line]. Only `file:` URLs resolve to a path.
+  static (String?, int?) _resolveLocation(
+    String? url,
+    int? line,
+    String? rootUrl,
+    int? rootLine,
+  ) {
+    final rootPath = _toRelativePath(rootUrl);
+    if (rootPath != null) {
+      return (rootPath, rootLine);
+    }
+    return (_toRelativePath(url), line);
+  }
+
+  static String? _toRelativePath(String? url) {
     if (url == null) {
       return null;
     }
@@ -132,9 +167,7 @@ class Test {
     if (uri == null || uri.scheme != 'file') {
       return null;
     }
-    final abs = uri.toFilePath();
-    final rel = p.relative(abs);
-    return line != null ? '$rel:$line' : rel;
+    return p.relative(uri.toFilePath());
   }
 
   static String _stripFilePaths(String name) {

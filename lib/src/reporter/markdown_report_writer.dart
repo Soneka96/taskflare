@@ -159,8 +159,9 @@ class MarkdownReportWriter implements ReportWriter {
     };
 
     final meta = <String>[];
-    if (test.fileRef != null) {
-      meta.add(test.fileRef!);
+    final location = test.result == TestResultKind.errored ? test.filePath : test.fileRef;
+    if (location != null) {
+      meta.add(location);
     }
     if (test.duration != null) {
       final secs = (test.duration!.inMilliseconds / 1000).toStringAsFixed(2);

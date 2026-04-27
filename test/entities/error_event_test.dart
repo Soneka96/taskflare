@@ -26,6 +26,15 @@ void main() {
       expect(e.isExpectFailure, isTrue);
     });
 
+    test('true when error message starts with "Test failed." (Flutter form)', () {
+      final e = ErrorEvent(
+        testId: 1,
+        isFailure: false,
+        error: 'Test failed. See exception logs above.\nThe test description was: my test',
+      );
+      expect(e.isExpectFailure, isTrue);
+    });
+
     test('false for a genuine uncaught exception', () {
       final e = ErrorEvent(
         testId: 1,

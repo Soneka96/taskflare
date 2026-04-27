@@ -29,10 +29,15 @@ class ErrorEvent extends TestEvent {
   /// The error message string as reported by the test runner.
   final String error;
 
-  /// Whether this error originated from an `expect()` call, either via the
-  /// [isFailure] flag or because the message is a `TestFailure` string
-  /// (Flutter wraps `TestFailure` before it reaches the JSON reporter,
-  /// causing [isFailure] to be `false` even for assertion mismatches).
+  /// Whether this error originated from an `expect()` call.
+  ///
+  /// Flutter wraps `TestFailure` before it reaches the JSON reporter, so
+  /// [isFailure] is unreliable. The real exception text lands in a `print`
+  /// event and the `error` field is reduced to `"Test failed. See exception
+  /// logs above..."`. We treat that marker as an expect failure.
   bool get isExpectFailure =>
-      isFailure || error.contains('TestFailure') || error.startsWith('Expected:');
+      isFailure ||
+      error.contains('TestFailure') ||
+      error.startsWith('Expected:') ||
+      error.startsWith('Test failed.');
 }

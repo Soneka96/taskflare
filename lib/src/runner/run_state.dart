@@ -47,6 +47,8 @@ class RunState {
       groupIds: e.groupIds,
       url: e.url,
       line: e.line,
+      rootUrl: e.rootUrl,
+      rootLine: e.rootLine,
       groupNames: _groupById,
     );
     _tests[e.id] = test;
