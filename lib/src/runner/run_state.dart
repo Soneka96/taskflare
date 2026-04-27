@@ -1,14 +1,11 @@
-import 'dart:io';
-
-import 'package:path/path.dart' as p;
-
+import '../entities/test.dart';
 import '../entities/test_event.dart';
 import '../utils/enums.dart';
 
 /// Mutable state accumulated during a single test run in [Taskflare.run].
 ///
-/// Records groups, tests, and their outcomes as events arrive, and exposes
-/// helpers to look up display names, file references, and outcome kinds.
+/// Maintains a [Test] per test ID, updated as events arrive, plus aggregate
+/// counters and infrastructure for notifications and crash output.
 class RunState {
   /// All stdout lines received from the test process, forwarded to [JsonEventParser] after the run.
   final lines = <String>[];
@@ -19,11 +16,10 @@ class RunState {
   /// In-flight per-failure notification futures, awaited after the run completes.
   final pendingNotifications = <Future<void>>[];
 
-  final _nameById = <int, String>{};
+  final _tests = <int, Test>{};
   final _groupById = <int, String>{};
-  final _testGroupIds = <int, List<int>>{};
-  final _fileById = <int, String?>{};
-  final _startTimeById = <int, DateTime>{};
+  // Buffered error events that arrived before testStart for the same ID.
+  final _pendingErrors = <int, ErrorEvent>{};
 
   /// Number of tests that have passed so far.
   int passed = 0;
@@ -34,30 +30,61 @@ class RunState {
   /// Number of tests that have been skipped so far.
   int skipped = 0;
 
-  /// Records a group from a [GroupEvent] so its name can be stripped from test display names.
+  // ── Event handlers ────────────────────────────────────────────────────────
+
+  /// Records a group name so it can be stripped from test display names.
   void recordGroup(GroupEvent e) {
     _groupById[e.id] = e.name;
   }
 
-  /// Records a test start from a [TestStartEvent], storing its name, group membership,
-  /// file reference, and start time for later lookup.
+  /// Creates a [Test] from a `testStart` event and stores it by ID.
+  ///
+  /// Also applies any buffered [ErrorEvent] that arrived before this start.
   void recordTestStart(TestStartEvent e) {
-    _nameById[e.id] = e.name;
-    _testGroupIds[e.id] = e.groupIds;
-    _fileById[e.id] = _buildFileRef(e.url, e.line);
-    _startTimeById[e.id] = DateTime.now();
+    final test = Test.fromStart(
+      id: e.id,
+      rawName: e.name,
+      groupIds: e.groupIds,
+      url: e.url,
+      line: e.line,
+      rootUrl: e.rootUrl,
+      rootLine: e.rootLine,
+      groupNames: _groupById,
+    );
+    _tests[e.id] = test;
+    final pending = _pendingErrors.remove(e.id);
+    if (pending != null) {
+      test.errorMessage = pending.error;
+      test.isExpectFailure = pending.isExpectFailure;
+    }
   }
 
-  /// Records a test completion from a [TestDoneEvent], increments the appropriate counter,
-  /// and returns the [TestResultKind].
-  TestResultKind recordTestDone(TestDoneEvent e) {
-    final resultKind = e.skipped
-        ? TestResultKind.skipped
-        : e.result == 'success'
-            ? TestResultKind.passed
-            : e.result == 'error'
-                ? TestResultKind.errored
-                : TestResultKind.failed;
+  /// Attaches error details to the matching [Test].
+  ///
+  /// If the [Test] hasn't started yet, buffers the event until [recordTestStart] fires.
+  void recordError(ErrorEvent e) {
+    final test = _tests[e.testId];
+    if (test == null) {
+      _pendingErrors[e.testId] = e;
+      return;
+    }
+    test.errorMessage = e.error;
+    test.isExpectFailure = e.isExpectFailure;
+  }
+
+  /// Finalises the [Test], sets result and duration, increments counters.
+  ///
+  /// Returns the completed [Test], or `null` when no matching test was found.
+  Test? recordTestDone(TestDoneEvent e) {
+    final test = _tests[e.testId];
+    if (test == null) {
+      return null;
+    }
+
+    final elapsed = DateTime.now().difference(test.startedAt);
+    test.duration = elapsed;
+    test.hidden = e.hidden;
+    test.result = _resolveResult(e, test.isExpectFailure);
 
     if (e.skipped) {
       skipped++;
@@ -67,79 +94,26 @@ class RunState {
       failed++;
     }
 
-    return resultKind;
+    return test;
   }
 
-  /// Returns `true` if the test belongs to a named group (not just the implicit root group).
-  bool isUserTest(int testId) => (_testGroupIds[testId]?.length ?? 0) > 1;
+  // ── Lookups ───────────────────────────────────────────────────────────────
 
-  /// Returns the display name of the test with its outermost group name prefix removed.
-  String leafName(int testId) {
-    final fullName = _nameById[testId] ?? '';
-    return _stripGroupPrefix(fullName, _testGroupIds[testId] ?? []);
-  }
+  /// Returns the [Test] for [testId], or `null` when not found.
+  Test? get(int testId) => _tests[testId];
 
-  /// Returns [leafName] with any embedded absolute file paths reduced to just the filename.
-  String leafNameStripped(int testId) => _stripFilePaths(leafName(testId));
+  // ── Private ───────────────────────────────────────────────────────────────
 
-  /// Returns the `file:line` reference for the test, or `null` if the source location is unavailable.
-  String? fileRef(int testId) => _fileById[testId];
-
-  /// Returns the name of the outermost named group that contains the test.
-  ///
-  /// Returns an empty string for tests that belong to no named group.
-  String outerGroupName(int testId) {
-    final groupIds = _testGroupIds[testId] ?? [];
-    for (final id in groupIds) {
-      final name = _groupById[id] ?? '';
-      if (name.isNotEmpty) {
-        return name;
-      }
+  static TestResultKind _resolveResult(TestDoneEvent e, bool isExpectFailure) {
+    if (e.skipped) {
+      return TestResultKind.skipped;
     }
-    return '';
-  }
-
-  /// Returns the wall-clock duration from when the test started to now.
-  ///
-  /// Returns `null` if no start time was recorded for [testId].
-  Duration? testElapsed(int testId) {
-    final start = _startTimeById[testId];
-    return start != null ? DateTime.now().difference(start) : null;
-  }
-
-  String _stripGroupPrefix(String fullName, List<int> groupIds) {
-    for (final id in groupIds.reversed) {
-      final groupName = _groupById[id] ?? '';
-      if (groupName.isEmpty) {
-        continue;
-      }
-      final prefix = '$groupName ';
-
-      return fullName.startsWith(prefix)
-          ? fullName.substring(prefix.length)
-          : fullName;
+    if (e.result == 'success') {
+      return TestResultKind.passed;
     }
-
-    return fullName;
-  }
-
-  static String? _buildFileRef(String? url, int? line) {
-    if (url == null) {
-      return null;
+    if (e.result == 'error' && !isExpectFailure) {
+      return TestResultKind.errored;
     }
-    final uri = Uri.tryParse(url);
-    if (uri == null || uri.scheme != 'file') {
-      return null;
-    }
-    final abs = uri.toFilePath();
-    final rel = p.relative(abs, from: Directory.current.path);
-    return line != null ? '$rel:$line' : rel;
-  }
-
-  static String _stripFilePaths(String name) {
-    return name.replaceAllMapped(
-      RegExp(r'(?:[A-Za-z]:[/\\]|(?<!\w)/)\S+'),
-      (match) => p.basename(match.group(0)!),
-    );
+    return TestResultKind.failed;
   }
 }

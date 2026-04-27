@@ -9,6 +9,8 @@ class TestStartEvent extends TestEvent {
     required this.groupIds,
     this.url,
     this.line,
+    this.rootUrl,
+    this.rootLine,
   });
 
   /// Parses a [TestStartEvent] from the raw JSON event map.
@@ -21,6 +23,8 @@ class TestStartEvent extends TestEvent {
       groupIds: rawGroupIds?.cast<int>() ?? const [],
       url: test['url'] as String?,
       line: test['line'] as int?,
+      rootUrl: test['root_url'] as String?,
+      rootLine: test['root_line'] as int?,
     );
   }
 
@@ -34,10 +38,18 @@ class TestStartEvent extends TestEvent {
   final List<int> groupIds;
 
   /// File URL where this test is defined (e.g. `file:///path/to/test.dart`).
-  /// `null` when the runner does not report a source location.
+  /// For Flutter widget tests this points at `package:flutter_test/...`,
+  /// not the user's test file — see [rootUrl].
   final String? url;
 
   /// Line number within [url] where this test is defined.
-  /// `null` when the runner does not report a source location.
   final int? line;
+
+  /// File URL of the user-authored call site (set when the test is invoked
+  /// through a wrapper like Flutter's `testWidgets`). Always a `file:` URL
+  /// pointing to the actual `_test.dart` file when present.
+  final String? rootUrl;
+
+  /// Line number within [rootUrl] of the user-authored call site.
+  final int? rootLine;
 }

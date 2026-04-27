@@ -1,13 +1,13 @@
 import '../entities/run_summary.dart';
-import 'test_record.dart';
+import '../entities/test.dart';
 
 /// Contract for components that produce a persistent report of a test run.
 ///
 /// Called by [Taskflare] during the run to buffer individual test results,
 /// then [finish] is called once with the final [RunSummary].
 abstract class ReportWriter {
-  /// Buffers a completed test for inclusion in the report.
-  void recordTest(TestRecord record);
+  /// Buffers a completed [Test] for inclusion in the report.
+  void recordTest(Test test);
 
   /// Writes the report to its destination.
   ///

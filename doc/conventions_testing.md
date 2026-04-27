@@ -9,6 +9,7 @@ test/
 ├── entities/
 ├── parser/
 ├── notifier/
+├── reporter/
 ├── runner/
 └── taskflare_test.dart
 ```
@@ -94,10 +95,11 @@ Fakes live in the same test file unless reused — then extract to `test/fakes/`
 
 ### Entities
 
-1. One group for each method (`copyWith`, etc.), named `'ClassName\'s methodName() returns the correct value'`
-2. One group for equality, named `'ClassName\'s equality behaves correctly'`
-3. One group for hashCode, named `'ClassName\'s hashCode behaves correctly'`
-4. One group for `toString()`, named `'ClassName\'s toString() returns the correct value'`
+1. One group for each factory or key method (`fromStart`, `fromJson`, `copyWith`, etc.), named `'ClassName\'s methodName() returns the correct value'` or `'ClassName.fromJson()'`
+2. One group for each computed getter with non-trivial logic (e.g. `isExpectFailure`, `fileRef`), named `'ClassName.getterName'`
+3. One group for equality, named `'ClassName\'s equality behaves correctly'` (only for entities that override `==`)
+4. One group for hashCode, named `'ClassName\'s hashCode behaves correctly'` (only for entities that override `hashCode`)
+5. One group for `toString()`, named `'ClassName\'s toString() returns the correct value'` (only when overridden)
 
 ### Parser
 

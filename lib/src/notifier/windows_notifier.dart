@@ -55,6 +55,14 @@ class WindowsNotifier implements Notifier {
     await _sendToast(title: testName, body: 'Test failed');
   }
 
+  /// Sends a toast notification for a finished shell command.
+  Future<void> notifyCommandFinished(String command, {required bool success}) async {
+    await _sendToast(
+      title: success ? 'Command finished' : 'Command failed',
+      body: command,
+    );
+  }
+
   /// Sends a toast notification with the given [title] and [body] via PowerShell.
   ///
   /// Throws a [ProcessException] if PowerShell exits with a non-zero code.

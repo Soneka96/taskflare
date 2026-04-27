@@ -3,19 +3,19 @@ import 'terminal.dart';
 
 /// Interactive configuration menu.
 ///
-/// Loads the current config, lets the user toggle filter and report settings,
+/// Loads the current config, lets the user toggle settings per command type,
 /// and saves on quit. Uses [term] for all screen I/O.
 Future<void> runConfigCommand(TerminalSession term) async {
   var config = await TaskflareConfig.load();
   while (true) {
     term.clear();
-    _printMainMenu(config, term);
+    _printMainMenu(term);
     final input = term.readLine()?.trim().toLowerCase();
     switch (input) {
       case '1':
-        config = _filterMenu(config, term);
+        config = await _testsMenu(config, term);
       case '2':
-        config = _reportMenu(config, term);
+        config = await _runMenu(config, term);
       case 'q':
         await config.save();
         return;
@@ -23,21 +23,26 @@ Future<void> runConfigCommand(TerminalSession term) async {
   }
 }
 
-void _printMainMenu(TaskflareConfig config, TerminalSession s) {
+void _printMainMenu(TerminalSession s) {
   s.writeln();
   s.writeln('  Taskflare configuration');
   s.writeln();
-  s.writeln('  1) Filter (terminal output)');
-  s.writeln('  2) Report file');
+  s.writeln('  1) Tests');
+  s.writeln('  2) Run');
   s.writeln('  q) Save and quit');
   s.writeln();
   s.write('Choose: ');
 }
 
-TaskflareConfig _filterMenu(TaskflareConfig config, TerminalSession term) {
+// ── Tests ────────────────────────────────────────────────────────────────────
+
+Future<TaskflareConfig> _testsMenu(
+  TaskflareConfig config,
+  TerminalSession term,
+) async {
   while (true) {
     term.clear();
-    _printFilterMenu(config, term);
+    _printTestsMenu(config, term);
     final input = term.readLine()?.trim().toLowerCase();
     switch (input) {
       case '1':
@@ -46,43 +51,57 @@ TaskflareConfig _filterMenu(TaskflareConfig config, TerminalSession term) {
         config = config.copyWith(showErrored: !config.showErrored);
       case '3':
         config = config.copyWith(showSkipped: !config.showSkipped);
+      case '4':
+        config = config.copyWith(testReportEnabled: !config.testReportEnabled);
       case 'b':
         return config;
     }
   }
 }
 
-void _printFilterMenu(TaskflareConfig config, TerminalSession s) {
+void _printTestsMenu(TaskflareConfig config, TerminalSession s) {
   s.writeln();
-  s.writeln('  Filter — what to print as a permanent line in the terminal?');
+  s.writeln('  Tests');
   s.writeln();
+  s.writeln('  Terminal output — permanent lines shown during a test run:');
   s.writeln('  1) Failed tests      ${_toggle(config.showFailed)}');
   s.writeln('  2) Errored tests     ${_toggle(config.showErrored)}');
   s.writeln('  3) Skipped tests     ${_toggle(config.showSkipped)}');
+  s.writeln();
+  s.writeln('  Report file — written to taskflare-reports/ after each run:');
+  s.writeln('  4) Generate report   ${_toggle(config.testReportEnabled)}');
+  s.writeln();
   s.writeln('  b) Back');
   s.writeln();
   s.write('Choose number to toggle: ');
 }
 
-TaskflareConfig _reportMenu(TaskflareConfig config, TerminalSession term) {
+// ── Run ──────────────────────────────────────────────────────────────────────
+
+Future<TaskflareConfig> _runMenu(
+  TaskflareConfig config,
+  TerminalSession term,
+) async {
   while (true) {
     term.clear();
-    _printReportMenu(config, term);
+    _printRunMenu(config, term);
     final input = term.readLine()?.trim().toLowerCase();
     switch (input) {
       case '1':
-        config = config.copyWith(reportEnabled: !config.reportEnabled);
+        config = config.copyWith(runReportEnabled: !config.runReportEnabled);
       case 'b':
         return config;
     }
   }
 }
 
-void _printReportMenu(TaskflareConfig config, TerminalSession s) {
+void _printRunMenu(TaskflareConfig config, TerminalSession s) {
   s.writeln();
-  s.writeln('  Report file — written to taskflare-reports/ after each run.');
+  s.writeln('  Run');
   s.writeln();
-  s.writeln('  1) Generate report   ${_toggle(config.reportEnabled)}');
+  s.writeln('  Report file — written to taskflare-reports/ after each run:');
+  s.writeln('  1) Generate report   ${_toggle(config.runReportEnabled)}');
+  s.writeln();
   s.writeln('  b) Back');
   s.writeln();
   s.write('Choose number to toggle: ');

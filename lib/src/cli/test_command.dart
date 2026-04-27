@@ -43,7 +43,7 @@ Future<void> runTestCommand(
       showErrored: config.showErrored,
       showSkipped: config.showSkipped,
     ),
-    reportWriter: config.reportEnabled
+    reportWriter: config.testReportEnabled
         ? MarkdownReportWriter(reportsDirectory: reportsDir)
         : null,
     command: commandLabel,
