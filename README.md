@@ -32,6 +32,16 @@ dart run taskflare test --name "my test"
 dart run taskflare test test/parser/
 ```
 
+### Run a shell command
+
+```sh
+dart run taskflare run                  # Prompts for a command interactively
+dart run taskflare run flutter build apk
+dart run taskflare run dart run build_runner build
+```
+
+Streams the command output directly to the terminal, fires a Windows notification when it finishes, and optionally writes a markdown report. Taskflare will not execute `taskflare run` inside itself.
+
 ### Help
 
 ```sh
@@ -55,10 +65,10 @@ Example output:
 [FAILURE]  passed: 108  failed: 2  skipped: 1  (14.3s)
 ```
 
-- `FAIL` — assertion error (`expect` failed)
-- `THROW` — uncaught exception thrown during the test
+- `FAIL` — assertion error (`expect` failed), including Flutter widget test failures
+- `THROW` — uncaught exception thrown during the test (shown without a line number)
 - `SKIP` — test was skipped
-- File references are printed as `path/to/file.dart:line` — Ctrl+click in most terminals and IDEs to jump directly to the test
+- File references are printed as `path/to/file.dart:line` — Ctrl+click in most terminals and IDEs to jump directly to the test. For Flutter widget tests the reference resolves to the user's test file, not the flutter_test framework
 
 The progress line updates in-place while tests run and is erased when the run completes, leaving only the permanent failure/skip lines and the final summary.
 
