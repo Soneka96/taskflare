@@ -82,6 +82,25 @@ class MarkdownReportWriter implements ReportWriter {
     buf.writeln('---');
     buf.writeln();
 
+    // ── Crash output ──────────────────────────────────────────────────────────
+
+    if (summary.outcome == TestOutcome.crash) {
+      buf.writeln('## Crash output');
+      buf.writeln();
+      if (summary.exitCode != null) {
+        buf.writeln('**Exit code:** ${summary.exitCode}');
+        buf.writeln();
+      }
+      if (summary.crashOutput != null && summary.crashOutput!.isNotEmpty) {
+        buf.writeln('```');
+        buf.writeln(summary.crashOutput);
+        buf.writeln('```');
+        buf.writeln();
+      }
+      buf.writeln('---');
+      buf.writeln();
+    }
+
     // ── Failed ────────────────────────────────────────────────────────────────
 
     final failed = _allTests()

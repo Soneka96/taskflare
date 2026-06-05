@@ -171,6 +171,64 @@ void main() {
       expect(content.indexOf('## Skipped tests'), lessThan(content.indexOf('## All tests')));
     });
 
+    test('crash output section always appears for crash outcome', () async {
+      await writer.finish(
+        summary: const RunSummary(
+          outcome: TestOutcome.crash,
+          passed: 5,
+          failed: 0,
+          skipped: 0,
+          exitCode: 1,
+        ),
+        command: 'flutter test',
+        directory: '/p',
+        startedAt: DateTime(2026),
+      );
+
+      final content = _readReport(tempDir);
+      expect(content, contains('## Crash output'));
+      expect(content, contains('**Exit code:** 1'));
+      expect(content.indexOf('## Crash output'), greaterThan(content.indexOf('## Summary')));
+      expect(content.indexOf('## Crash output'), lessThan(content.indexOf('## All tests')));
+    });
+
+    test('crash output section includes stderr when crashOutput is set', () async {
+      await writer.finish(
+        summary: const RunSummary(
+          outcome: TestOutcome.crash,
+          passed: 5,
+          failed: 0,
+          skipped: 0,
+          exitCode: 1,
+          crashOutput: 'Unhandled exception: Something went wrong\n#0 main (main.dart:10)',
+        ),
+        command: 'flutter test',
+        directory: '/p',
+        startedAt: DateTime(2026),
+      );
+
+      final content = _readReport(tempDir);
+      expect(content, contains('## Crash output'));
+      expect(content, contains('Unhandled exception: Something went wrong'));
+    });
+
+    test('crash output section is absent for non-crash outcomes', () async {
+      await writer.finish(
+        summary: const RunSummary(
+          outcome: TestOutcome.success,
+          passed: 5,
+          failed: 0,
+          skipped: 0,
+        ),
+        command: 'flutter test',
+        directory: '/p',
+        startedAt: DateTime(2026),
+      );
+
+      final content = _readReport(tempDir);
+      expect(content, isNot(contains('## Crash output')));
+    });
+
     test('failed and skipped sections are absent when there are none', () async {
       writer.recordTest(_makeTest(leafName: 'only passing', groupName: '', result: TestResultKind.passed));
 

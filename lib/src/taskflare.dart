@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'entities/test_event.dart';
@@ -124,8 +125,21 @@ class Taskflare {
     var summary = parser.parse(state.lines, exitCode);
     summary = summary.copyWith(duration: elapsed);
 
-    if (summary.outcome == TestOutcome.crash && state.stderrLines.isNotEmpty) {
-      summary = summary.copyWith(crashOutput: state.stderrLines.join('\n'));
+    if (summary.outcome == TestOutcome.crash) {
+      final nonJsonLines = state.lines.where((line) {
+        if (line.trim().isEmpty) return false;
+        try {
+          json.decode(line);
+          return false;
+        } catch (_) {
+          return true;
+        }
+      }).toList();
+      final outputLines = [...nonJsonLines, ...state.stderrLines];
+      summary = summary.copyWith(
+        exitCode: exitCode,
+        crashOutput: outputLines.isNotEmpty ? outputLines.join('\n') : null,
+      );
     }
 
     if (reportWriter != null) {

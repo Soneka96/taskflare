@@ -16,6 +16,7 @@ class RunSummary {
     required this.skipped,
     this.failedTestNames = const [],
     this.crashOutput,
+    this.exitCode,
     this.duration,
   });
 
@@ -41,6 +42,11 @@ class RunSummary {
   /// `null` for [TestOutcome.success] and [TestOutcome.failure].
   final String? crashOutput;
 
+  /// Process exit code, populated when the outcome is [TestOutcome.crash].
+  ///
+  /// `null` for [TestOutcome.success] and [TestOutcome.failure].
+  final int? exitCode;
+
   /// Elapsed wall-clock time from process start to stream completion.
   ///
   /// `null` when the summary is constructed without timing information.
@@ -54,6 +60,7 @@ class RunSummary {
     int? skipped,
     List<String>? failedTestNames,
     String? crashOutput,
+    int? exitCode,
     Duration? duration,
   }) {
     return RunSummary(
@@ -63,6 +70,7 @@ class RunSummary {
       skipped: skipped ?? this.skipped,
       failedTestNames: failedTestNames ?? this.failedTestNames,
       crashOutput: crashOutput ?? this.crashOutput,
+      exitCode: exitCode ?? this.exitCode,
       duration: duration ?? this.duration,
     );
   }
@@ -78,6 +86,7 @@ class RunSummary {
         other.failed == failed &&
         other.skipped == skipped &&
         other.crashOutput == crashOutput &&
+        other.exitCode == exitCode &&
         other.duration == duration &&
         _listEquals(other.failedTestNames, failedTestNames);
   }
@@ -89,6 +98,7 @@ class RunSummary {
         failed,
         skipped,
         crashOutput,
+        exitCode,
         duration,
         Object.hashAll(failedTestNames),
       );
@@ -97,7 +107,7 @@ class RunSummary {
   String toString() => 'RunSummary(outcome: $outcome, passed: $passed, '
       'failed: $failed, skipped: $skipped, '
       'failedTestNames: $failedTestNames, crashOutput: $crashOutput, '
-      'duration: $duration)';
+      'exitCode: $exitCode, duration: $duration)';
 }
 
 bool _listEquals<T>(List<T> a, List<T> b) {

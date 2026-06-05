@@ -27,11 +27,17 @@ class ConsoleNotifier implements Notifier {
     _printer('$label  passed: ${summary.passed}  '
         'failed: ${summary.failed}  skipped: ${summary.skipped}$durationSuffix');
 
-    if (summary.crashOutput != null && summary.crashOutput!.isNotEmpty) {
-      _printer('');
-      _printer('  ERROR OUTPUT:');
-      for (final line in summary.crashOutput!.split('\n')) {
-        _printer('  $line');
+    if (summary.outcome == TestOutcome.crash) {
+      if (summary.exitCode != null) {
+        _printer('');
+        _printer('  Exit code: ${summary.exitCode}');
+      }
+      if (summary.crashOutput != null && summary.crashOutput!.isNotEmpty) {
+        _printer('');
+        _printer('  ERROR OUTPUT:');
+        for (final line in summary.crashOutput!.split('\n')) {
+          _printer('  $line');
+        }
       }
     }
   }

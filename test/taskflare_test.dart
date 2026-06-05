@@ -141,6 +141,81 @@ void main() {
 
       expect(notifier.received?.crashOutput, isNull);
     });
+
+    test('Method run() includes non-JSON stdout lines in crashOutput', () async {
+      final notifier = _FakeNotifier();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"start","protocolVersion":"0.1.1"}',
+            '{"testID":0,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":false}',
+            'Dart VM out of memory',
+            '#0  main (file:///project/lib/main.dart:10)',
+          ],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+      );
+
+      await taskflare.run();
+
+      expect(notifier.received?.crashOutput, contains('Dart VM out of memory'));
+      expect(notifier.received?.crashOutput, contains('#0  main'));
+    });
+
+    test('Method run() excludes valid JSON stdout lines from crashOutput', () async {
+      final notifier = _FakeNotifier();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"type":"suite","suite":{"id":0,"platform":"vm","path":"test/foo_test.dart"}}',
+            '[{"event":"test.startedProcess","params":{"vmServiceUri":null}}]',
+            '{"type":"done","success":false}',
+          ],
+          exitCode: 1,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+      );
+
+      await taskflare.run();
+
+      expect(notifier.received?.crashOutput, isNull);
+    });
+
+    test('Method run() populates exitCode when outcome is crash', () async {
+      final notifier = _FakeNotifier();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(lines: [], exitCode: 42),
+        parser: JsonEventParser(),
+        notifier: notifier,
+      );
+
+      await taskflare.run();
+
+      expect(notifier.received?.exitCode, equals(42));
+    });
+
+    test('Method run() does not set exitCode when outcome is success', () async {
+      final notifier = _FakeNotifier();
+      final taskflare = Taskflare(
+        runner: _FakeRunner(
+          lines: [
+            '{"testID":0,"result":"success","skipped":false,"hidden":false,"type":"testDone"}',
+            '{"type":"done","success":true}',
+          ],
+          exitCode: 0,
+        ),
+        parser: JsonEventParser(),
+        notifier: notifier,
+      );
+
+      await taskflare.run();
+
+      expect(notifier.received?.exitCode, isNull);
+    });
   });
 
   group('Method run() calls the notifier the correct number of times', () {
